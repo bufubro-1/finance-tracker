@@ -1,0 +1,12 @@
+{% extends 'prototype/base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<p class="eyebrow">Your overview</p>
+<h1>Dashboard</h1>
+<p class="intro">A clear place to view your savings and accounts.</p>
+<section class="empty-state" aria-labelledby="welcome-heading">
+  <h2 id="welcome-heading">Your prototype starts here</h2>
+  <p>Explore the Accounts page to see the sample card layout. This shell does not save accounts or calculate wealth yet.</p>
+  <a class="button" href="{% url 'accounts' %}">Explore accounts</a>
+</section>
+{% endblock %}

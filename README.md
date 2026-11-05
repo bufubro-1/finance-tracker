@@ -6,7 +6,9 @@ The approved MVP includes balances/holdings, optional savings contributions and 
 
 The first planned Django prototype is a local synthetic-data application with clear navigation, readable account cards and an intuitive account form. Its 16 hours are included in the 264-hour remaining development planning baseline.
 
-**Implemented today:** accepted TASK-001 supplies a minimal Streamlit runtime/configuration shell and focused tests. Financial tracking and Django are not implemented yet. Follow [existing runtime setup](docs/SETUP.md) for that shell.
+**Implemented and accepted:** TASK-001 supplies a minimal Streamlit runtime/configuration shell and focused tests. Its launcher remains unchanged.
+
+**TASK-022A, prepared for review:** a separate local Django shell provides Dashboard/Accounts navigation, labeled sample cards and the initial custom user-model migration. Sign-in, account creation and financial tracking remain later tasks. Follow [local setup](docs/SETUP.md) for either runtime. Use synthetic data only, on loopback.
 
 **Target:** Django/PostgreSQL on Raspberry Pi 5 (8 GB), CasaOS, Docker Compose and Cloudflare Tunnel/HTTPS. Compatibility, infrastructure, CI and deployment remain later tasks. Invite-only accounts, User isolation, Admin MFA and recovery are mandatory before real users or sensitive data. Admin has no application access to private finances.
 
