@@ -1,12 +1,24 @@
 {% extends 'prototype/base.html' %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}Genel Bakış{% endblock %}
 {% block content %}
-<p class="eyebrow">Your overview</p>
-<h1>Dashboard</h1>
-<p class="intro">A clear place to view your savings and accounts.</p>
-<section class="empty-state" aria-labelledby="welcome-heading">
-  <h2 id="welcome-heading">Your prototype starts here</h2>
-  <p>Explore the Accounts page to see the sample card layout. This shell does not save accounts or calculate wealth yet.</p>
-  <a class="button" href="{% url 'accounts' %}">Explore accounts</a>
+<p class="eyebrow">Birikimlerinize genel bakış</p>
+<h1>Genel Bakış</h1>
+<p class="intro">Birikimlerinizi ve hesaplarınızı kolayca takip edin.</p>
+{% if accounts %}
+<section class="summary-card" aria-labelledby="balance-heading">
+  <h2 id="balance-heading">{% if total_complete %}Toplam kayıtlı bakiye{% else %}Bilinen kayıtlı ara toplam · Eksik{% endif %}</h2>
+  {% if currency %}<p class="balance"><span class="currency">{{ currency }}</span> {{ total_balance }}</p>{% else %}<p>Para birimi desteklenmediği için toplam gösterilemiyor.</p>{% endif %}
+  <p>{{ account_count }} kayıtlı deneme hesabı.</p>
+  <p class="muted">Yalnızca açılış bakiyelerini içerir. Bu tutar yeni birikim veya yatırım getirisi değildir. Borçlar dahil değildir.</p>
+  {% if not total_complete %}<p role="status">Bazı açılış bilgileri eksik veya desteklenmiyor. Eksik bakiyeler sıfır kabul edilmez.</p>{% endif %}
+  <a href="{% url 'accounts' %}">Kaydedilen hesapları görüntüle</a>
 </section>
+<p><a class="button" href="{% url 'create_account' %}">Birikim hesabı oluştur</a></p>
+{% else %}
+<section class="empty-state" aria-labelledby="welcome-heading">
+  <h2 id="welcome-heading">Henüz kayıtlı bakiye yok</h2>
+  <p>İlk deneme hesabınızı oluşturun. Kaydedilen açılış bakiyesi burada görünecek; örnek kartlar toplama dahil edilmeyecek.</p>
+  <a class="button" href="{% url 'create_account' %}">Birikim hesabı oluştur</a>
+</section>
+{% endif %}
 {% endblock %}

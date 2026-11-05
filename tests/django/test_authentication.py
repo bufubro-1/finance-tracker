@@ -50,7 +50,7 @@ for path in ("/", "/accounts/"):
     response = client.get(path)
     assert response.status_code == 200
     assert "no-store" in response["Cache-Control"]
-    assert b'Sign out' in response.content
+    assert "Çıkış yap".encode() in response.content
 assert client.get("/logout/").status_code == 405
 assert client.get("/").status_code == 200
 response = client.post("/logout/", {"csrfmiddlewaretoken": csrf(client, "/")})
@@ -92,11 +92,11 @@ def test_login_fields_and_errors_are_accessible(run_django, migrated_prototype):
     run_django(AUTH_SETUP + r'''
 response = client.get("/login/")
 html = response.content.decode()
-assert '<label for="id_username">Email:</label>' in html
-assert '<label for="id_password">Password:</label>' in html
+assert '<label for="id_username">E-posta:</label>' in html
+assert '<label for="id_password">Şifre:</label>' in html
 assert 'type="email"' in html and 'autocomplete="username"' in html
 assert 'type="password"' in html and 'autocomplete="current-password"' in html
-assert 'name="viewport"' in html and 'Synthetic data only' in html
+assert 'name="viewport"' in html and 'Yalnızca örnek veriler' in html
 response = login(client, password=secrets.token_urlsafe(24))
 assert 'value="sample@example.invalid"' in response.content.decode()
 assert 'name="password"' in response.content.decode()
@@ -199,6 +199,6 @@ assert client.get("/accounts/").status_code == 200
 def test_only_scoped_routes_exist(run_django, migrated_prototype):
     run_django(AUTH_SETUP + r'''
 for path in ("/register/", "/signup/", "/password_reset/", "/password_change/", "/admin/",
-             "/accounts/create/"):
+             "/accounts/1/edit/", "/accounts/1/delete/"):
     assert client.get(path).status_code == 404
 ''')

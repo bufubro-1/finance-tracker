@@ -44,6 +44,7 @@ Do not mark a task, requirement, test case, or milestone complete without implem
 
 ## Implementation Principles
 
+- Follow the owner's approved Turkish application-interface language. Write user-facing pages, navigation, form labels, help text, validation errors, notifications and empty/success/error states in Turkish; configure Django's built-in interface messages and HTML language accordingly. Preserve the project name **Finance Tracker** under DEC-001. This interface-language rule does not itself require translating source identifiers or project documentation.
 - Follow the documented modular monolith and keep UI, services, persistence, and external adapters at their documented boundaries.
 - Keep financial calculations deterministic and independently testable. Supply dates/clocks explicitly where needed.
 - Use precise Python Decimal arithmetic for monetary calculations and exact integer minor units where documented. Binary floats must not enter authoritative calculations or financial persistence; chart conversions are presentation only.

@@ -55,9 +55,10 @@ def test_actual_loopback_startup_and_static_assets(prototype_env, tmp_path):
             else:
                 raise AssertionError("Django startup timed out")
             with response:
-                assert response.status == 200 and b"Synthetic data only" in response.read()
+                assert response.status == 200 and "Yalnızca örnek veriler".encode() in response.read()
                 assert response.url.endswith("/login/?next=/")
-            for path, expected in [("/accounts/", b"Sign in"), ("/static/prototype/style.css", b".card-grid")]:
+            for path, expected in [("/accounts/", "Giriş yap".encode()), ("/static/prototype/style.css", b".card-grid"),
+                                   ("/static/prototype/theme.js", b"finance-tracker-theme")]:
                 with opener.open(f"http://127.0.0.1:{port}{path}", timeout=2) as response:
                     assert response.status == 200 and expected in response.read()
                     if path == "/accounts/":
