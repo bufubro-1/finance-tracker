@@ -2,7 +2,7 @@
 * { box-sizing: border-box; }
 body { margin: 0; }
 a { color: #175c48; text-underline-offset: .2em; }
-a:focus-visible, main:focus-visible { outline: 3px solid #ad6500; outline-offset: 4px; }
+a:focus-visible, main:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid #ad6500; outline-offset: 4px; }
 .skip-link { position: absolute; left: 1rem; top: -5rem; padding: .7rem; background: white; z-index: 1; }
 .skip-link:focus { top: 1rem; }
 .development-banner { padding: .65rem 1rem; text-align: center; background: #fff0cc; color: #634700; font-size: .9rem; }
@@ -25,4 +25,15 @@ p { max-width: 65ch; overflow-wrap: anywhere; }
 .balance { font-size: clamp(1.6rem, 6vw, 2.1rem); font-variant-numeric: tabular-nums; font-weight: 700; margin: .8rem 0; }
 .currency { font-size: 1rem; }
 .muted, footer { color: #4c625b; font-size: .9rem; }
+.login-panel { max-width: 30rem; margin: 0 auto; padding: clamp(1rem, 4vw, 2rem); border: 1px solid #cbd9d0; border-radius: .8rem; background: white; }
+.login-form, .form-field { display: grid; gap: .5rem; }
+.login-form { gap: 1.25rem; }
+.form-field label { font-weight: 600; }
+.form-field input { width: 100%; min-width: 0; padding: .7rem; border: 1px solid #8b9f95; border-radius: .4rem; font: inherit; }
+button { font: inherit; cursor: pointer; }
+button.button { border: 0; }
+.logout-form { margin: 0; }
+.logout-button { padding: .55rem .85rem; border: 1px solid #a8bbb0; border-radius: .5rem; background: white; color: #175c48; }
+.errorlist { color: #8b2424; padding-left: 1.25rem; margin: 0; overflow-wrap: anywhere; }
+.form-errors { padding: .8rem; border-left: 3px solid #8b2424; background: #fff2ef; }
 @media (max-width: 30rem) { .site-header { align-items: flex-start; flex-direction: column; } }

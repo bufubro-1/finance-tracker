@@ -12,12 +12,18 @@
   <div class="development-banner">Local development prototype · Synthetic data only · Do not enter personal information</div>
   <header class="site-header">
     <a class="brand" href="{% url 'dashboard' %}">Finance Tracker</a>
+    {% if user.is_authenticated %}
     <nav aria-label="Main navigation">
       <a href="{% url 'dashboard' %}"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}>Dashboard</a>
       <a href="{% url 'accounts' %}"{% if active_page == 'accounts' %} aria-current="page"{% endif %}>Accounts</a>
     </nav>
+    <form method="post" action="{% url 'logout' %}" class="logout-form">
+      {% csrf_token %}
+      <button type="submit" class="logout-button">Sign out</button>
+    </form>
+    {% endif %}
   </header>
   <main id="content" tabindex="-1">{% block content %}{% endblock %}</main>
-  <footer>Shell preview · Sign-in and saved accounts arrive in later prototype tasks.</footer>
+  <footer>Local development prototype · Saved accounts arrive in the next prototype task.</footer>
 </body>
 </html>

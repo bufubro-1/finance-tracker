@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import socket
+import sqlite3
 import subprocess
 import sys
 import time
@@ -55,13 +56,22 @@ def test_actual_loopback_startup_and_static_assets(prototype_env, tmp_path):
                 raise AssertionError("Django startup timed out")
             with response:
                 assert response.status == 200 and b"Synthetic data only" in response.read()
-            for path, expected in [("/accounts/", b"Example Savings"), ("/static/prototype/style.css", b".card-grid")]:
+                assert response.url.endswith("/login/?next=/")
+            for path, expected in [("/accounts/", b"Sign in"), ("/static/prototype/style.css", b".card-grid")]:
                 with opener.open(f"http://127.0.0.1:{port}{path}", timeout=2) as response:
                     assert response.status == 200 and expected in response.read()
+                    if path == "/accounts/":
+                        assert response.url.endswith("/login/?next=/accounts/")
             listeners = [row.split()[1] for row in Path("/proc/net/tcp").read_text().splitlines()[1:]
                          if row.split()[3] == "0A" and row.split()[1].endswith(f":{port:04X}")]
             assert listeners == [f"0100007F:{port:04X}"]
             assert not Path(prototype_env["FINANCE_TRACKER_DATABASE_PATH"]).exists()
+            # Django's existing runserver migration probe opens SQLite, but must
+            # neither apply migrations nor provision an identity on startup.
+            db = Path(prototype_env["FINANCE_TRACKER_PROTOTYPE_DATABASE_PATH"])
+            assert db.stat().st_mode & 0o077 == 0
+            with sqlite3.connect(f"{db.as_uri()}?mode=ro", uri=True) as connection:
+                assert connection.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall() == []
         finally:
             process.terminate()
             process.wait(timeout=10)

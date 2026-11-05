@@ -65,10 +65,16 @@ ROOT_URLCONF = "finance_tracker.django_app.urls"
 TEMPLATES = [{
     "BACKEND": "django.template.backends.django.DjangoTemplates",
     "APP_DIRS": True,
-    "OPTIONS": {"context_processors": ["django.template.context_processors.request"]},
+    "OPTIONS": {"context_processors": [
+        "django.template.context_processors.request",
+        "django.contrib.auth.context_processors.auth",
+    ]},
 }]
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": prototype_database()}}
 AUTH_USER_MODEL = "identity.User"
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "dashboard"
+LOGOUT_REDIRECT_URL = "login"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 USE_TZ = True
 TIME_ZONE = "UTC"
