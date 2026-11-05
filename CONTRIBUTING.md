@@ -10,11 +10,24 @@ Pull Requests (PRs) are optional for routine changes. Every implementation task 
 
 Read the [documentation index](docs/README.md), [Charter](docs/CHARTER.md), and [Decision Log](docs/DECISION_LOG.md) first. Follow [AGENTS.md](AGENTS.md) for source precedence, security, and agent restrictions, and [BRANCH.md](BRANCH.md) for Git operations.
 
-No application, dependency manifest, or executable test suite exists. DEC-017 resolves OQ-004's runtime selection: use the current Linux environment, Python 3.14.x with locally installed 3.14.8 as the initial target, and venv, pip, and pytest. Dependency compatibility and exact compatible dependency versions remain unverified work for TASK-001. Report incompatibilities rather than silently changing Python or architecture. There is no verified installation, application-start, or test command yet.
+TASK-001 now provides the runtime/package skeleton, environment configuration,
+minimal local Streamlit shell, and focused tests. Follow [local setup and
+configuration](docs/SETUP.md) for Python 3.14.x, venv, pinned pip dependencies,
+startup commands, variables, and trusted-device network guidance. The initial
+tested interpreter is 3.14.8 under DEC-017.
 
-DEC-018 authorizes only TASK-001 under the documented requirements, architecture, and acceptance criteria: runtime/package skeleton, configuration loading/validation, minimal local-first Streamlit startup, integrations disabled by default, and relevant setup documentation/tests. Financial calculations, database schemas, asset management, Gemini features, and Telegram features are excluded. OQ-001 remains open for the remaining baseline; other decisions retain their task gates. Execution is explicitly held: TASK-001 remains Not Started until an instruction to begin.
+After following the setup guide, run `python -m pytest -q` and
+`python -m pip check`. The startup test opens a temporary loopback listener; the
+test runner needs local socket permission. Use isolated synthetic fixtures and
+private temporary paths, never personal databases or live destinations.
 
-When TASK-001 is explicitly started, use an isolated venv and pip with the project's documented dependencies and commands. Keep credentials in private environment configuration, respect existing ignore rules, and use synthetic fixtures with isolated temporary databases. Keep Gemini/Telegram disabled for core development; automated tests use fakes. Live checks require explicit owner consent and synthetic payloads, not personal data or destinations by default.
+The owner's TASK-001 start instruction lifts DEC-018's execution hold for this
+task only. Its boundary remains runtime/configuration/startup and relevant
+setup tests/documentation. Financial calculations, database schemas, asset
+management, Gemini features, and Telegram features remain later work. Both
+adapters remain disabled. Other decision gates and remaining baseline approval
+under OQ-001 are unchanged. Focused evidence does not complete broader
+requirements, the first-dashboard milestone, or owner acceptance.
 
 ## Task Selection and Traceability
 
