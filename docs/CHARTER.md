@@ -1,7 +1,7 @@
 # Project Charter
 ## Finance Tracker
 
-**Project Name:** Finance Tracker  
+**Project Name:** Finance Tracker
 **Project Type:** Personal Software Development / Open Source  
 **Project Status:** Planning  
 **Development Approach:** Iterative and Incremental  
@@ -28,7 +28,7 @@ Individuals often rely on spreadsheets or multiple applications to track their s
 
 These approaches may lack centralized reporting, automated progress tracking, and personalized insights.
 
-Finance Tracker aims to address these problems by combining financial records, goal monitoring, and AI-assisted analysis in one lightweight application.
+Personal Wealth Tracker aims to address these problems by combining financial records, goal monitoring, and AI-assisted analysis in one lightweight application.
 
 ## 3. Project Objectives
 
@@ -252,7 +252,7 @@ These enhancements are optional and will be evaluated only after the core applic
 
 ## 14. Project Authorization
 
-The Project Charter defines the initial objectives, scope, constraints, deliverables, and success criteria of Finance Tracker.
+The Project Charter defines the initial objectives, scope, constraints, deliverables, and success criteria of Personal Wealth Tracker.
 
 Development may begin with Phase 1: Project Foundation.
 
