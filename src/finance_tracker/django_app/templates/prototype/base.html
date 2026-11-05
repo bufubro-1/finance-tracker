@@ -1,0 +1,23 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{% endblock %} · Finance Tracker</title>
+  <link rel="stylesheet" href="{% static 'prototype/style.css' %}">
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <div class="development-banner">Local development prototype · Synthetic data only · Do not enter personal information</div>
+  <header class="site-header">
+    <a class="brand" href="{% url 'dashboard' %}">Finance Tracker</a>
+    <nav aria-label="Main navigation">
+      <a href="{% url 'dashboard' %}"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}>Dashboard</a>
+      <a href="{% url 'accounts' %}"{% if active_page == 'accounts' %} aria-current="page"{% endif %}>Accounts</a>
+    </nav>
+  </header>
+  <main id="content" tabindex="-1">{% block content %}{% endblock %}</main>
+  <footer>Shell preview · Sign-in and saved accounts arrive in later prototype tasks.</footer>
+</body>
+</html>

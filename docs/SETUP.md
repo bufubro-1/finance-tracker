@@ -1,12 +1,72 @@
-# Finance Tracker — Existing Runtime Setup
+# Finance Tracker — Local Runtime Setup
 
-**Current implementation:** accepted TASK-001 Streamlit runtime shell at `5052b5b`. The commands below start that existing shell; they do not start Django or a portfolio tracker. Keep it on loopback with synthetic configuration. Historical trusted-LAN instructions below describe the old accepted interface, not authorization to expose it or use sensitive data under the revised release policy.
+**Accepted implementation:** TASK-001 Streamlit runtime shell at `5052b5b`. Its existing commands remain below. Keep it on loopback with synthetic configuration. Historical trusted-LAN instructions describe the old accepted interface, not authorization to expose it or use sensitive data under the revised release policy.
 
-**Approved target, not yet implemented:** the M-009 Django prototype uses clean Dashboard/Accounts navigation, readable cards, intuitive account creation, standard development login and disposable synthetic SQLite. Its actual commands, dependencies and fixtures will be added by TASK-022A/025A/004A1. Do not invent a runnable Django command before those tasks exist.
+**TASK-022A, prepared for human review:** the separate Django shell provides Dashboard/Accounts navigation, synthetic sample cards, a development banner and the initial custom email user model. The shell is read-only and currently has no sign-in, identity provisioning or account form. TASK-025A adds development authentication; TASK-004A1 adds owned accounts and exact cash observations. This is partial M-009 coverage, not an accepted complete prototype or production application.
 
-**Intended later release environment:** Raspberry Pi 5 (8 GB), CasaOS, Docker Compose, PostgreSQL and Cloudflare Tunnel with HTTPS. TASK-024 verifies ARM64/runtime/OS/image/Compose compatibility; TASK-020 separately implements/rehearses authorized deployment and recovery. No Dockerfile, Compose configuration, database, CI workflow, tunnel or CasaOS setup is created by this revision. Existing x86_64/Python 3.14.8 evidence does not establish that environment's compatibility.
+**Intended later release environment:** Raspberry Pi 5 (8 GB), CasaOS, Docker Compose, PostgreSQL and Cloudflare Tunnel with HTTPS. TASK-024 verifies ARM64/runtime/OS/image/Compose compatibility; TASK-020 separately implements/rehearses authorized deployment and recovery. No Dockerfile, Compose configuration, release PostgreSQL database, CI workflow, tunnel or CasaOS setup is created by this task. Existing x86_64/Python 3.14.8 evidence does not establish that environment's compatibility.
 
 All intermediate work uses synthetic data. Full authentication, ownership authorization, Admin MFA, privacy, recovery and release verification precede real users or sensitive data. See [approved schedule](planning/PROJECT_SCHEDULE.md) and [Decision Log](DECISION_LOG.md). Python 3.14.x development selection remains approved; version/image choices for the intended host remain a recorded gate.
+
+## TASK-022A Django shell (Bash)
+
+From the task worktree, create and install the Python 3.14 environment with the
+same venv/pip setup commands in the existing instructions below. The updated
+lock retains all TASK-001 pins and adds Django 5.2.19, asgiref 3.13.0 and
+sqlparse 0.6.1. Django 5.2 supports Python 3.14 from 5.2.8 onward; see the
+[official compatibility notes](https://docs.djangoproject.com/en/5.2/releases/5.2/).
+Pi/ARM64 and release compatibility remain unverified.
+
+Configure the separate prototype database and a private development signing key:
+
+```bash
+umask 077
+install -d -m 700 data
+export FINANCE_TRACKER_PROTOTYPE_DATABASE_PATH="$PWD/data/prototype.sqlite3"
+export FINANCE_TRACKER_DJANGO_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(64))')"
+export DJANGO_SETTINGS_MODULE=finance_tracker.django_app.settings
+python -m django check
+python -m django migrate --noinput
+python -m finance_tracker.django_app
+```
+
+Open `http://127.0.0.1:8000`; stop with Ctrl+C. Optional `--port 8001`
+changes only the port. The launcher fixes the address to `127.0.0.1`, selects
+prototype settings even if `DJANGO_SETTINGS_MODULE` was inherited, disables
+autoreload and serves packaged CSS using Django's development static handler.
+`--insecure` is supplied internally solely to serve static files with `DEBUG=False`.
+Use this guarded launcher; do not bind a development server to a LAN/public address.
+No deployment, proxy, cloud credentials or external calls are involved.
+
+The database path defaults to `data/prototype.sqlite3` relative to the launch
+directory. It must be a local file in an existing owner-owned private directory
+(0700); an existing file must be owner-owned and private (0600). The configured
+legacy database path is rejected if it resolves to the same file path. No legacy
+configuration is changed. Path validation creates nothing; explicit `migrate`
+creates only the synthetic identity/session schema. Startup does not run migrations
+or provision identities. Keep the signing key local and out of Git; regenerating
+it invalidates future signed sessions. Do not enter real identities or records.
+
+The Accounts card is a fixed **Example Savings / USD / 1,000.00** illustration,
+not an ORM account or a computed total. No financial models or data exist yet.
+The database is disposable prototype storage, never a production migration source.
+The custom user model is established before the first migration so subsequent
+tasks can extend it. Django admin is not exposed and superuser provisioning is
+disabled; application Admin policy belongs to later identity tasks.
+
+Verify the task with:
+
+```bash
+python -m pytest -q
+python -m pip check
+python -m django makemigrations --check --dry-run
+```
+
+The combined suite runs the unchanged TASK-001 tests and isolated Django tests.
+Both actual-listener checks require Linux local socket permission. Django tests
+use private temporary databases and child interpreters so their settings cannot
+leak into Streamlit tests. Full sign-in/create/logout and owner demonstration
+remain TASK-025A/004A1 obligations. See the [TASK-022A review report](testing/TASK-022A_REVIEW.md).
 
 ## Existing TASK-001 instructions
 
@@ -31,7 +91,7 @@ python -m pip install --no-build-isolation --no-deps -e '.[dev]'
 python -m pip check
 ```
 
-`requirements.lock` pins the full tested Linux/Python 3.14 environment, including
+`requirements.lock` pins the Linux/Python 3.14 environment, including
 pip, the setuptools build backend, pytest, and Streamlit's transitive dependencies.
 `pyproject.toml` declares the direct application and development requirements.
 The editable installation uses the already installed, pinned build backend.
