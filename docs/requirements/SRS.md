@@ -1,542 +1,612 @@
 # Finance Tracker — Software Requirements Specification
 
-Status: Draft specification with the M-001A acceptance profile approved under DEC-015 and runtime selection approved under DEC-017. DEC-018 authorizes TASK-001 only under the documented requirements, architecture, and acceptance criteria; execution is explicitly held and the remaining baseline is not approved by that decision. Financial calculations, database schemas, asset management, Gemini features, and Telegram features are outside TASK-001. Other proposed technical policies retain their review status. No application behavior is implemented or verified.
-Baseline: [Project Charter](../CHARTER.md), read in full on 2026-11-05, and confirmed owner choices in [DECISION_LOG](../DECISION_LOG.md). This is an IEEE 29148-inspired structure, not a claim of standards certification. The Charter remains proposed; drafting this SRS does not approve it.
+Status: Owner-approved Savings and Wealth MVP scope and milestone strategy (DEC-020 through DEC-026); revised requirements pending human review. Implementation status is separate: only historical TASK-001 is accepted. New Django, schema, infrastructure and planned cases are not implemented by this revision.
 
-## 1. Introduction
+## Product, actors and release boundaries
 
-### Purpose and audience
+Finance Tracker is a small invite-only savings, wealth and investment portfolio application. Users manually maintain current balances/holdings and optional savings movements, without recording every expense or trade. The User owns financial data; Admin manages membership/health without financial access; Operator controls deployment/backup outside application roles. Accounts are financial locations, distinct from login identities. A contribution crosses the boundary of all tracked accounts; moving between them is internal.
 
-Specify testable behavior for the owner/developer, future contributors, and acceptance reviewer of Finance Tracker. Provide the basis for design, backlog, and planned tests before application development.
+Initial release includes balances, manual holdings/prices, qualified wealth/history, account-linked goals, optional estimated profile, monthly authenticated reports and generic reminder email. Gemini is a later release; Telegram, detailed ledgers, expense categorization, cost-basis/trading records and cash reservations are deferred. No liabilities or automatic transactions are committed.
 
-### Scope and product overview
+Prototype M-009 is a 16-hour reusable local Django slice with synthetic data, development SQLite and standard development authentication. All intermediate milestones use synthetic data. Full authentication, authorization, Admin MFA, privacy, PostgreSQL integrity/recovery and release verification are mandatory before real users or sensitive data. Intended deployment is Pi 5 (8 GB), CasaOS, Docker Compose and Cloudflare Tunnel/HTTPS; compatibility and implementation remain later work. Financial core is independent of SMTP/Gemini; remote access still depends on host/WAN/Tunnel.
 
-A lightweight self-hosted, single-user financial dashboard manages manually recorded assets, income, expenses, savings goals, and local data. It offers optional Gemini explanations and optional Telegram notifications. Approved M-001A delivers the first working opening-only dashboard at 32 cumulative hours / end of Week 4, with essential persistence, validation, tests and recovery. The first usable complete core remains M-004 at 92 hours and includes financial tracking, dashboards, goals, backup/restore, and export. The complete Charter release also delivers Gemini and Telegram, with no requirement to enable them during ordinary use.
+Must means required for the specified release, not implemented. Later Gemini obligations do not gate the MVP. Prior requirement meanings and original acceptance text remain recoverable at baseline `5052b5b`; amended concepts below are explicit scope changes authorized by DEC-020/021, not retrospective evidence for TASK-001.
 
-Excluded: multi-user management, banking integration, automatic trading/rebalancing, mobile apps, public cloud hosting, live market trading, wallet connections, and regulated personalized investment advice. Automated prices, advanced multi-currency analysis, inflation adjustments, forecasting, recurring entries, advanced analytics, AI categorization, and responsive-layout improvements are future candidates, not release commitments.
+## Functional requirements
 
-### Definitions and terminology
+### FR-001 — Deployment configuration
 
-| Term | Meaning |
-|---|---|
-| Personal User | The single owner operating the dashboard and receiving authorized notifications. |
-| Account | A logical location of holdings, not a bank connection or application login. |
-| Asset | A unit-defined cash, currency, gold, stock, or fund instrument. |
-| Base cash | Cash in the dataset reporting currency, with unit price fixed at one. |
-| Reporting currency | One explicitly selected currency used for all totals, prices, and monetary amounts. |
-| Posting / holding | A signed quantity change for an account/asset; a holding is the sum of effective postings. |
-| Effective transaction | A posted event including any correcting/reversing events that determine the current restated history. |
-| Reservation / allocation | An earmark of existing base cash for a goal; it creates no money or ownership transfer. |
-| Priced subtotal | Value of holdings with available prices; incomplete when any positive holding lacks a price. |
-| Asset-only net-worth estimate | Total tracked assets; explicitly excludes liabilities, which are not recorded. |
-| Must / Should / Could | Release obligation / desirable nonblocking capability / optional enhancement. Must integrations can be disabled at runtime. |
+The system shall load validated deployment configuration and keep external adapters disabled unless configured.
 
-## 2. Overall description
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Missing optional credentials do not block core startup; errors redact secrets; development and release settings are distinct.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-022A, TASK-022B, TASK-020; US-001; UC-001; TC-001, TC-038, TC-053.
+- **Source:** Charter D10 and DEC-020 through DEC-026; BR-024.
 
-### Product perspective and users
+### FR-002 — Per-user reporting currency
 
-A new modular Python monolith, with Streamlit presentation, SQLite persistence, Pandas/Plotly reporting, and isolated external API adapters. No legacy application or executable test suite exists. The owner, developer, and primary user are initially one person, comfortable with local startup and manual finance entry but not expected to understand database internals for ordinary workflows. Gemini and Telegram are supporting systems, not human users.
+The system shall require one reporting currency and scale per User before financial records; prevent reinterpretation after records exist.
 
-### Operating environment
-
-Run on a personal computer/local server with a local-disk database. DEC-017 approves the current Linux environment, Python 3.14.x with locally installed 3.14.8 as the initial target, and venv, pip, and pytest, resolving OQ-004's runtime selection. Dependency compatibility and exact compatible dependency versions remain unverified TASK-001 work; report incompatibilities rather than silently changing Python or architecture. Access is loopback by default and optionally from explicitly trusted LAN devices. Internet is needed only for enabled external integrations. The optional notification command is invoked by a host scheduler; no always-on cloud service is required.
-
-### Constraints
-
-Use the Charter stack, minimize costs, keep core workflows offline, keep secrets and financial records outside Git, and keep complexity appropriate for a solo developer. No application login is planned: admitted devices can read and modify the dataset. Network restrictions are required before enabling LAN binding; this is not a public-internet deployment.
-
-### Assumptions and dependencies
-
-Confirmed choices DEC-002 through DEC-008 govern currency, liabilities, access, goals, consent, capacity, and Telegram scope. ASM-001 through ASM-005 cover owner-supplied credentials, host availability, local disk, manual backups, and local date/time. These are not confirmed product requirements. Proposed schema, rounding, stale-price, recovery, and replay policies retain their existing reviews under DEC-010 through DEC-014, DEC-016, and OQ-002/003/005/006/007. DEC-017's runtime approval and DEC-018's limited TASK-001 authorization do not resolve those policies or approve the remainder of OQ-001. API availability, quota, pricing, and bot access are external dependencies; no account is created by this project.
-
-## 3. Functional requirements
-
-All requirements below are planned. Priority is relative to the complete Charter release, not a claim of implementation. Dependencies name prerequisite capabilities, not mandatory code initialization order.
-
-### FR-001 — Local configuration
-
-The system shall load deployment paths, integration enablement, and credentials from environment variables, with external integrations disabled by default.
-
-- **Priority:** Must
-- **Rationale:** Keep local deployment reproducible without exposing secrets.
-- **Acceptance criteria:** Without API credentials, the core launches with both adapters disabled; enabling an adapter with missing credentials produces a redacted configuration error and leaves the core usable.
-- **Dependencies:** None
-- **Source:** Charter §4.1 Data Management; §9; §11.
-
-### FR-002 — Reporting currency
-
-The system shall require one reporting currency and its minor-unit scale before the first financial record, and reject changes after financial records exist.
-
-- **Priority:** Must
-- **Rationale:** Avoid mixing incomparable amounts or silently reinterpreting historical records.
-- **Acceptance criteria:** A fresh dataset requires an explicit currency selection; later currency changes are rejected without modifying records; foreign-currency units can be priced manually in the reporting currency.
-- **Dependencies:** FR-001
-- **Source:** Charter §4.1 Asset Management; owner decision DEC-002.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Two users may choose different currencies; changing a used currency is rejected. Prototype fixtures explicitly choose a synthetic example currency.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-002, TASK-003; US-001; UC-001; TC-002, TC-047.
+- **Source:** Charter D2 and DEC-020 through DEC-026; BR-001, BR-011.
 
 ### FR-003 — Account management
 
-The system shall allow the user to create, rename, view, archive, and delete unused logical accounts.
+The system shall create, rename, list and archive owned savings and investment accounts.
 
-- **Priority:** Must
-- **Rationale:** Represent locations of manually tracked holdings without banking integrations.
-- **Acceptance criteria:** Account names are unique ignoring case; an account with postings or allocations cannot be physically deleted; archiving requires zero holdings and no allocations.
-- **Dependencies:** FR-002
-- **Source:** Charter §2; §12 financial records.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Names are unique within an owner; history survives archive; archival changes comparison coverage and cannot manufacture savings.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-004A1, TASK-004A2, TASK-004B; US-002; UC-002; TC-003, TC-039, TC-053.
+- **Source:** Charter D2 and DEC-020 through DEC-026; BR-016, BR-018.
 
-### FR-004 — Asset management
+### FR-004 — Asset definitions
 
-The system shall allow the user to create, edit, view, archive, and delete unused asset definitions for cash, currencies, gold, stocks, and funds.
+The system shall maintain owned instrument definitions for cash, currencies, gold, stocks and funds with declared units.
 
-- **Priority:** Must
-- **Rationale:** Cover all Charter asset classes.
-- **Acceptance criteria:** Each asset records a name, type, unit, and optional quoted currency; duplicate account holdings are aggregated by asset ID; referenced assets cannot be physically deleted; base cash has a fixed unit value of one.
-- **Dependencies:** FR-002, FR-003
-- **Source:** Charter §4.1 Asset Management; §12.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Referenced units cannot be silently changed; instruments with history retain their identity; foreign holdings use manual reporting-currency prices.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-004A2, TASK-004B; US-003; UC-002; TC-004, TC-043.
+- **Source:** Charter D2 and DEC-020 through DEC-026; BR-001, BR-011, BR-016.
 
-### FR-005 — Manual price history
+### FR-005 — Dated manual prices
 
-The system shall let the user record and correct dated manual unit prices in the reporting currency for non-base-cash assets.
+The system shall record dated positive exact unit prices and auditable revisions.
 
-- **Priority:** Must
-- **Rationale:** Support initial portfolio valuation without market feeds.
-- **Acceptance criteria:** Positive finite prices and effective dates are validated; superseded observations remain auditable; correcting a price recomputes affected reports; future-dated prices are rejected.
-- **Dependencies:** FR-004
-- **Source:** Charter §4.1 Asset Management; §10.
-
-### FR-006 — Holding transactions
-
-The system shall record opening holdings, manual acquisitions, disposals, and quantity adjustments with dated posting history.
-
-- **Priority:** Must
-- **Rationale:** Connect portfolio quantities and cash movements without inventing investment income.
-- **Acceptance criteria:** A purchase of 200 reduces base cash by 200 and adds the purchased quantity atomically; a sale records its cash proceeds; opening balances and adjustments are excluded from income and expenses; insufficient holdings are rejected. One opening registration saves its new asset definition, opening posting and optional initial price atomically; invalid/failing submissions leave no partial records. Replaying one logical submission cannot duplicate it, including after restart; conflicting key reuse is rejected. The exact replay mechanism remains DEC-016/OQ-007.
-- **Dependencies:** FR-003, FR-004
-- **Source:** Charter §4.1 Asset Management; §12.
-
-### FR-007 — Income recording
-
-The system shall record dated income with a positive base-currency amount, account, category, and optional note.
-
-- **Priority:** Must
-- **Rationale:** Provide accurate monthly income.
-- **Acceptance criteria:** Valid income increases account base cash once; missing account, zero/negative amount, excess monetary precision, and future dates are rejected without partial writes.
-- **Dependencies:** FR-006
-- **Source:** Charter §3 objective 2; §12.
-
-### FR-008 — Expense recording
-
-The system shall record dated expenses with a positive base-currency amount, account, category, and optional note.
-
-- **Priority:** Must
-- **Rationale:** Provide accurate spending and protect reserved savings.
-- **Acceptance criteria:** Valid expense reduces base cash once; an expense exceeding unreserved cash is rejected with a release-allocation instruction; invalid inputs leave balances unchanged.
-- **Dependencies:** FR-006
-- **Source:** Charter §3 objective 2; §12.
-
-### FR-009 — Record correction and deletion
-
-The system shall allow the user to correct or logically delete financial transactions while preserving the original audit history.
-
-- **Priority:** Must
-- **Rationale:** Meet edit/delete success criteria without erasing provenance.
-- **Acceptance criteria:** A correction creates linked replacement/reversal records in one transaction; deletion reverses the effective record; repeated deletion is rejected; changed historical balances and reservations are revalidated before commit.
-- **Dependencies:** FR-006, FR-007, FR-008
-- **Source:** Charter §12 assets and transactions CRUD.
-
-### FR-010 — Account transfers
-
-The system shall move base-currency cash between two distinct accounts as one atomic transfer.
-
-- **Priority:** Must
-- **Rationale:** Prevent transfers from being counted as income or expenses.
-- **Acceptance criteria:** A 100 transfer creates equal source/destination cash changes; total assets and monthly income/expense remain unchanged; self-transfer and insufficient unreserved funds are rejected.
-- **Dependencies:** FR-003, FR-006
-- **Source:** Charter §2 multiple accounts; derived BR-004.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Future, nonfinite or invalid prices fail; historical valuations never use a price effective after the valuation date.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-008A, TASK-008B; US-008; UC-007; TC-005, TC-047.
+- **Source:** Charter D1/D2 and DEC-020 through DEC-026; BR-002, BR-011, BR-013.
 
 ### FR-011 — Valuation completeness
 
-The system shall identify missing and outdated prices with observation dates on portfolio totals and charts.
+The system shall show missing and stale balances, quantities and prices with observation dates.
 
-- **Priority:** Must
-- **Rationale:** Avoid misleading totals from unknown or stale prices.
-- **Acceptance criteria:** Any positive unpriced holding yields an incomplete priced subtotal, never an assumed zero value; a stale price remains in the subtotal with a warning; the stale threshold is configurable.
-- **Dependencies:** FR-005, FR-006
-- **Source:** Charter §10 incorrect portfolio valuation.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Unpriced holdings make totals incomplete; carrying a value forward does not refresh it; missing values never become assumed zero.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-008A, TASK-008B, TASK-010; US-009; UC-008; TC-011, TC-072.
+- **Source:** Charter D1 and DEC-020 through DEC-026; BR-002, BR-005, BR-013.
 
-### FR-012 — Total assets and net-worth estimate
+### FR-012 — Tracked wealth totals
 
-The system shall calculate total assets and an explicitly labeled asset-only net-worth estimate from current holdings and valid manual prices.
+The system shall calculate total tracked assets from cash and priced holdings without double-counting.
 
-- **Priority:** Must
-- **Rationale:** Provide the Charter dashboard while exposing the absence of liabilities.
-- **Acceptance criteria:** For cash 1000 and an asset valued at 200, both figures equal 1200; the dashboard states liabilities are not tracked; goal reservations add nothing; incomplete prices qualify both figures.
-- **Dependencies:** FR-011
-- **Source:** Charter §4.1 Dashboard; owner decision DEC-003.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Cash 1000 plus 10 units priced at 20 equals 1200; goal links add nothing; liabilities are explicitly excluded; incomplete totals are qualified.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-002, TASK-008A, TASK-008B; US-009; UC-008; TC-012, TC-035, TC-068.
+- **Source:** Charter D1 and DEC-020 through DEC-026; BR-002, BR-005, BR-011.
 
-### FR-013 — Monthly cash-flow reporting
+### FR-014 — Portfolio distribution
 
-The system shall report monthly income, expenses, savings, and savings rate using effective financial transactions.
+The system shall display composition consistent with the priced wealth subtotal.
 
-- **Priority:** Must
-- **Rationale:** Make spending and saving measurable.
-- **Acceptance criteria:** Income 300 and expenses 100 produce savings 200 and a 66.67% display rate; transfers and investments do not change these totals; zero/negative income produces an unavailable rate.
-- **Dependencies:** FR-007, FR-008, FR-009, FR-010
-- **Source:** Charter §4.1 Dashboard; §12.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Distribution sums to that subtotal; unknown values appear separately; empty or zero-value portfolios show guidance rather than invented percentages.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-008B; US-009; UC-008; TC-014.
+- **Source:** Charter D1 and DEC-020 through DEC-026; BR-005.
 
-### FR-014 — Asset distribution
+### FR-015 — Historical wealth
 
-The system shall show asset distribution by asset type with values consistent with the portfolio subtotal.
+The system shall display dated, immutable wealth snapshots with their coverage and freshness limitations.
 
-- **Priority:** Must
-- **Rationale:** Explain portfolio composition.
-- **Acceptance criteria:** Distribution values sum to the displayed priced subtotal; unknown holdings are listed separately; an empty or zero-value portfolio shows an empty state instead of misleading percentages.
-- **Dependencies:** FR-011, FR-012
-- **Source:** Charter §4.1 Dashboard.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** No current balance is backfilled into an earlier date; missing history remains missing; corrections may create a new snapshot revision, not overwrite an accepted snapshot.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-010; US-011; UC-008; TC-015, TC-069.
+- **Source:** Charter D1 and DEC-020 through DEC-026; BR-013, BR-019.
 
-### FR-015 — Historical trends
+### FR-016 — Savings goals
 
-The system shall display historical asset values and monthly cash-flow trends using dated transactions and prices.
+The system shall create and edit multiple owned savings goals with targets and deadlines.
 
-- **Priority:** Must
-- **Rationale:** Support historical financial review.
-- **Acceptance criteria:** Past dates use prices effective no later than that date; earlier dates without prices remain incomplete; corrections refresh affected periods; latest prices are not applied retroactively.
-- **Dependencies:** FR-005, FR-009, FR-013
-- **Source:** Charter §4.1 Dashboard.
-
-### FR-016 — Savings goal management
-
-The system shall create, edit, view, archive, and logically delete multiple goals with positive target amounts and target dates.
-
-- **Priority:** Must
-- **Rationale:** Represent distinct savings outcomes.
-- **Acceptance criteria:** Two simultaneous goals can be saved; invalid targets are rejected; past deadlines are allowed and labeled overdue when underfunded; deleting or archiving a goal explicitly releases its active reservations atomically.
-- **Dependencies:** FR-002
-- **Source:** Charter §4.1 Financial Goals.
-
-### FR-017 — Savings reservations
-
-The system shall allocate and release existing base-currency cash to goals without moving or duplicating funds.
-
-- **Priority:** Must
-- **Rationale:** Prevent double-counting across goals.
-- **Acceptance criteria:** With cash 1000, reserving 700 leaves 300 available; another reservation of 400 is rejected; reservations across goals never exceed each source account cash balance; releases and cash edits preserve this invariant atomically.
-- **Dependencies:** FR-006, FR-016
-- **Source:** Charter §4.1 Financial Goals; owner decision DEC-005.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Validate positive targets; allow overdue goals with a clear state; closing a goal releases its account links, not cash.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-011; US-012; UC-009; TC-016.
+- **Source:** Charter D3 and DEC-020 through DEC-026; BR-020.
 
 ### FR-018 — Goal progress
 
-The system shall show reserved cash, remaining target, and completion percentage for each goal.
+The system shall measure goal progress from linked account values without locking or duplicating assets.
 
-- **Priority:** Must
-- **Rationale:** Make progress visible without treating goals as extra assets.
-- **Acceptance criteria:** Reserved 250 against target 1000 gives 25% and remaining 750; progress bars cap at 100% while excess funding is shown separately; released funds immediately reduce progress.
-- **Dependencies:** FR-017
-- **Source:** Charter §4.1 Financial Goals.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Each account supports at most one active goal; withdrawal or falling value can reduce progress; missing/stale values qualify progress.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-029; US-021; UC-018; TC-018, TC-071.
+- **Source:** Charter D3 and DEC-020 through DEC-026; BR-005, BR-020.
 
-### FR-019 — Required contributions
+### FR-019 — Indicative monthly savings
 
-The system shall calculate a deterministic required monthly contribution from the unfunded target and remaining monthly contribution opportunities.
+The system shall calculate indicative monthly saving needed from remaining goal value and deadline.
 
-- **Priority:** Must
-- **Rationale:** Support planning independently of Gemini.
-- **Acceptance criteria:** For remaining target 900 and three opportunities, the contribution is 300; funded goals return zero; overdue underfunded goals show overdue with no monthly amount; amounts round upward to a minor unit.
-- **Dependencies:** FR-018
-- **Source:** Charter §4.1 Financial Goals.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Gap 1.00 over three opportunities rounds upward to 0.34 at scale 2; funded gives zero; overdue underfunded gives overdue, not division by zero; incomplete valuation qualifies the result.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-002, TASK-013; US-014; UC-011; TC-019, TC-047.
+- **Source:** Charter D3 and DEC-020 through DEC-026; BR-009, BR-011, BR-020.
 
-### FR-020 — Spending explanations
+### FR-020 — Savings explanations
 
-The system shall offer user-initiated Gemini explanations of approved spending aggregates.
+The system shall offer user-initiated explanations of approved savings and wealth summaries.
 
-- **Priority:** Must
-- **Rationale:** Explain patterns without delegating financial arithmetic.
-- **Acceptance criteria:** A valid approved monthly aggregate can be explained; all displayed financial totals retain their deterministic source values; an unavailable API yields a recoverable error.
-- **Dependencies:** FR-013, FR-024
-- **Source:** Charter §4.1 AI Integration; D4.
+- **Priority / release:** Must / Later Gemini
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Explain reported contributions and unknown attribution honestly; estimates are not actual spending; Gemini cannot alter computed values.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-015; US-015; UC-012; TC-020, TC-049.
+- **Source:** Charter D4 and DEC-020 through DEC-026; BR-012.
 
 ### FR-021 — Goal feasibility explanations
 
-The system shall offer user-initiated Gemini explanations of deterministic savings-goal projections.
+The system shall explain deterministic goal projections using approved context.
 
-- **Priority:** Must
-- **Rationale:** Explain the gap between required contributions and recorded savings.
-- **Acceptance criteria:** The request includes approved target/progress/contribution summaries; missing history is disclosed; Gemini cannot change the target, reservation, or calculated monthly contribution.
-- **Dependencies:** FR-019, FR-024
-- **Source:** Charter §4.1 AI Integration; D4.
+- **Priority / release:** Must / Later Gemini
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Context preserves stale/missing-data warnings and includes profile estimates only when approved; goals and balances remain unchanged.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-015; US-016; UC-012; TC-021, TC-049.
+- **Source:** Charter D4 and DEC-020 through DEC-026; BR-012.
 
-### FR-022 — Natural-language summaries
+### FR-022 — AI summaries
 
-The system shall provide user-initiated Gemini summaries of approved financial aggregates.
+The system shall display optional AI summaries separately from deterministic reports.
 
-- **Priority:** Must
-- **Rationale:** Make calculated summaries easier to understand.
-- **Acceptance criteria:** A summary is labeled AI-generated and separate from computed figures; portfolio completeness warnings accompany the context; generated text creates no financial records.
-- **Dependencies:** FR-012, FR-013, FR-024
-- **Source:** Charter §4.1 AI Integration; D4.
+- **Priority / release:** Must / Later Gemini
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Output is labeled unverified explanation and cannot become an authoritative saved financial figure.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-015; US-015; UC-012; TC-022, TC-049.
+- **Source:** Charter D4 and DEC-020 through DEC-026; BR-012.
 
-### FR-023 — Financial questions
+### FR-023 — Financial explanation questions
 
-The system shall allow the user to submit a financial question to Gemini with explicitly approved context.
+The system shall allow approved explanatory questions without execution tools or personalized security buy/sell recommendations.
 
-- **Priority:** Must
-- **Rationale:** Support the Charter question workflow within an explanatory boundary.
-- **Acceptance criteria:** The question and selected context appear in the preview; no arbitrary tools, SQL, trading, or financial-write capability is supplied to Gemini; the response is labeled explanatory.
-- **Dependencies:** FR-024
-- **Source:** Charter §4.1 AI Integration; §12.
+- **Priority / release:** Must / Later Gemini
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Requests for specific security recommendations receive an explanation-only boundary; no SQL, payments, trades or writes can execute.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-015; US-017; UC-012; TC-023, TC-049.
+- **Source:** Charter D4 and DEC-020 through DEC-026; BR-012.
 
-### FR-024 — Per-request AI consent
+### FR-024 — Per-request Gemini consent
 
-The system shall preview the exact minimized summary and question before each Gemini transmission and require an explicit send action.
+The system shall preview and approve the exact minimized question and summary for one call.
 
-- **Priority:** Must
-- **Rationale:** Make external disclosure deliberate.
-- **Acceptance criteria:** Canceling the preview makes no API call; editing the question or financial context invalidates prior approval; approval permits one call and cannot be reused by a Streamlit rerun; generated context excludes tokens, account labels, and record notes; the exact user-typed question is visible for approval.
-- **Dependencies:** FR-001
-- **Source:** Charter §6 D4 approved summaries; §11; owner decision DEC-006.
+- **Priority / release:** Must / Later Gemini
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Cancel makes zero calls; changed context/question invalidates consent; replay cannot consume approval twice; labels, notes and credentials are excluded from generated context.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-014; US-015, US-016, US-017; UC-012, UC-017; TC-024, TC-036, TC-049.
+- **Source:** Charter D4 and DEC-020 through DEC-026; BR-012.
 
-### FR-025 — Authorized Telegram destination
+### FR-029 — Operator backup
 
-The system shall send Telegram content only to the single explicitly configured and validated private-chat recipient.
+The system shall provide a consistent protected PostgreSQL backup, separate from user exports.
 
-- **Priority:** Must
-- **Rationale:** Prevent financial reports reaching unauthorized chats.
-- **Acceptance criteria:** Missing, group, mismatched, or unvalidated recipient configuration fails closed; a deliberate non-financial connection test confirms the destination; incoming commands are not processed and reveal no data.
-- **Dependencies:** FR-001
-- **Source:** Charter §4.1 Telegram; §11; owner decision DEC-008.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Operator procedure verifies a backup independently; ordinary Users and application Admin cannot download a whole-system backup.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-007A, TASK-007B, TASK-020; US-020; UC-015; TC-029, TC-046, TC-068.
+- **Source:** Charter D10 and DEC-020 through DEC-026; BR-024.
 
-### FR-026 — Scheduled Telegram summaries
+### FR-030 — Validated operator restore
 
-The system shall deliver enabled weekly or monthly deterministic financial summaries to the authorized recipient while the local runner is available.
+The system shall restore only after candidate validation, explicit operator confirmation and a recoverable safety backup.
 
-- **Priority:** Must
-- **Rationale:** Provide periodic reports without an external service dependency.
-- **Acceptance criteria:** A configured due period creates one delivery record; rerunning an acknowledged period does not resend; a missed schedule sends at most the latest due period after restart; timeout ambiguity is surfaced.
-- **Dependencies:** FR-013, FR-025, FR-028
-- **Source:** Charter §4.1 Telegram; D5.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Invalid candidates leave live data intact; stop writers, verify restored ownership/figures, invalidate sessions and pause outbound jobs before reviewed resumption.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-007A, TASK-007B, TASK-020; US-020; UC-015; TC-030, TC-034, TC-046, TC-068.
+- **Source:** Charter D10 and DEC-020 through DEC-026; BR-024.
 
-### FR-027 — Goal reminders and updates
+### FR-031 — Private CSV export
 
-The system shall send enabled goal reminders and progress updates through the authorized Telegram destination.
+The system shall export only the authenticated User's exact records and relevant metadata.
 
-- **Priority:** Must
-- **Rationale:** Keep savings goals visible outside the dashboard.
-- **Acceptance criteria:** A configured reminder includes the selected goal progress, deadline, and deterministic contribution; duplicate runner invocations do not resend acknowledged occurrences; released/deleted goals do not generate stale updates.
-- **Dependencies:** FR-018, FR-019, FR-025, FR-028
-- **Source:** Charter §3 objective 5; §4.1 Telegram.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** No other user, credentials or tokens appear; neutralize spreadsheet formulas; CSV is not a disaster-recovery backup.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-007B; US-020; UC-016; TC-031, TC-058.
+- **Source:** Charter D8/D10 and DEC-020 through DEC-026; BR-024.
 
-### FR-028 — Notification preferences
+### FR-032 — Durable integration-independent core
 
-The system shall let the user enable, disable, and configure Telegram report/reminder schedules and approved content in the dashboard.
+The system shall persist committed core data and keep local financial workflows independent of Gemini and SMTP.
 
-- **Priority:** Must
-- **Rationale:** Keep financial sharing optional and predictable.
-- **Acceptance criteria:** No scheduled financial message is enabled by default; configuration requires a timezone, recipient, content preview/approval, and chosen schedule; disabling a rule prevents new attempts, while a network request already in flight may complete and remains visible in delivery status.
-- **Dependencies:** FR-025
-- **Source:** Charter §4.1 Telegram; §11.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Committed observations survive restart; failed updates roll back; remote access depends on WAN/tunnel, but domain calculations require no external API.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-022A, TASK-003, TASK-004A2, TASK-020; US-001; UC-001; TC-032, TC-040.
+- **Source:** Charter D2/D10 and DEC-020 through DEC-026; BR-023.
 
-### FR-029 — Consistent local backup
+### FR-033 — Invite-only membership
 
-The system shall produce a consistent local SQLite backup without including external credentials.
+The system shall permit account enrollment only through a valid invitation to the intended email.
 
-- **Priority:** Must
-- **Rationale:** Reduce financial-data loss risk.
-- **Acceptance criteria:** A completed backup opens independently and passes integrity checks; failed writes produce no success message or usable-looking partial backup; active writes cannot create a torn snapshot.
-- **Dependencies:** FR-032
-- **Source:** Charter §4.1 Data Management; §11.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Invitation tokens expire, are single-use and are stored as hashes; no public registration; revoked or used invitations fail.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-025B; US-022; UC-019; TC-054.
+- **Source:** Charter D8 and DEC-020 through DEC-026; BR-024.
 
-### FR-030 — Validated restore
+### FR-034 — Authentication and sessions
 
-The system shall restore a supported local backup only after validation, explicit replacement confirmation, and a recoverable pre-restore backup.
+The system shall authenticate using Django password/session foundations, then complete email/password login and recovery for release.
 
-- **Priority:** Must
-- **Rationale:** Avoid destroying valid data during recovery.
-- **Acceptance criteria:** Invalid/corrupt/unsupported backups leave the live dataset unchanged; application and runner writers are stopped before replacement; a supported round trip preserves balances, prices, goals, and history.
-- **Dependencies:** FR-029
-- **Source:** Charter §4.1 Data Management; §11.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Prototype uses a locally provisioned synthetic identity; release verifies email ownership, generic reset responses, revocation and secure cookies; suspended users lose access.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-025A, TASK-025B; US-023; UC-020; TC-055, TC-053.
+- **Source:** Charter D8 and DEC-020 through DEC-026; BR-024.
 
-### FR-031 — CSV export
+### FR-035 — Admin/User privilege separation
 
-The system shall export financial records, holdings/prices, goals, and allocations as documented CSV files.
+The system shall allow Admin to manage membership without access to private financial workflows.
 
-- **Priority:** Must
-- **Rationale:** Provide portable user-owned data.
-- **Acceptance criteria:** Exports carry stable IDs, currency/scale, dates, and exact decimal text; credentials are excluded; spreadsheet-formula text is neutralized and documented; CSV is not advertised as a restore backup.
-- **Dependencies:** FR-006, FR-016, FR-017
-- **Source:** Charter §4.1 Data Management.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** No impersonation, arbitrary password setting or financial model admin; reset can only be sent to the existing verified address; protected email/role changes cannot enable takeover.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-026; US-024; UC-021; TC-057.
+- **Source:** Charter D8 and DEC-020 through DEC-026; BR-024.
 
-### FR-032 — Offline persistence
+### FR-036 — Financial ownership isolation
 
-The system shall persist committed core records locally and keep financial tracking, dashboard, goals, backup, restore, and export usable without either external API.
+The system shall enforce authenticated ownership on every financial read, write, cache, export, snapshot and scheduled job.
 
-- **Priority:** Must
-- **Rationale:** Honor local-first operation and optional integrations.
-- **Acceptance criteria:** After restart all committed records remain; disabled, unreachable, or unconfigured APIs do not block core reads/writes; a failed transaction leaves no partial postings or reservations.
-- **Dependencies:** FR-001, FR-002
-- **Source:** Charter §9 constraints; §12.
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** User A and Admin cannot access B through identifiers, forms, downloads or jobs; cross-owner relationships fail atomically; no client-supplied owner override.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-003, TASK-026, TASK-019; US-025; UC-022; TC-057, TC-058.
+- **Source:** Charter D8 and DEC-020 through DEC-026; BR-024.
 
-## 4. Non-functional requirements
+### FR-037 — Manual balance and holding observations
 
-All NFRs are Must release constraints. Numerical thresholds labeled proposed require owner review; their tests remain planned.
+The system shall let users enter their current cash balances and holding quantities without transaction-by-transaction entry.
 
-### NFR-001 — LAN access security
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** An initial observation establishes starting wealth, not a contribution; validate exact nonnegative amounts; investment totals derive from cash and holdings, never an added duplicate account total.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-004A1, TASK-004A2; US-026; UC-023; TC-059, TC-053, TC-068.
+- **Source:** Charter D2 and DEC-020 through DEC-026; BR-002, BR-016, BR-023.
 
-The deployment shall restrict dashboard access to explicitly trusted devices on a private network.
+### FR-038 — Simple savings movements
 
-- **Priority:** Must
-- **Rationale:** Protect accurate, private, maintainable local operation.
-- **Acceptance criteria:** From an allowed device the dashboard is reachable; from a denied device it is blocked. Bind loopback by default, require explicit LAN binding/firewall setup, and document that allowed devices have full access without login.
-- **Verification:** TC-037 in [TEST_PLAN](../testing/TEST_PLAN.md).
+The system shall optionally record external savings contributed/withdrawn alongside a balance update.
 
-### NFR-002 — Secrets and local records
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Save observations and annotations once atomically; contributions do not increase the entered balance again; internal tracked-account movements have zero net contribution; skipped classification is allowed.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-028; US-027; UC-024; TC-060, TC-067.
+- **Source:** Charter D2 and DEC-020 through DEC-026; BR-017, BR-023.
 
-Secrets and financial files shall remain outside version control and sanitized application logs.
+### FR-039 — Honest change attribution
 
-- **Priority:** Must
-- **Rationale:** Protect accurate, private, maintainable local operation.
-- **Acceptance criteria:** Synthetic .env, database, export, backup, and log files are ignored; repository/log inspection finds no seeded credentials, account notes, or financial prompts. OS permissions limit data paths to the owner.
-- **Verification:** TC-038 in [TEST_PLAN](../testing/TEST_PLAN.md).
+The system shall separate recorded wealth change, reported net contributions and supported residual change.
+
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Without comparable endpoints and explicit interval-completeness confirmation, show attribution unknown; 10000 to 11200 with complete net contributions 1000 gives residual 200, never an automatic return percentage or investment-profit claim.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-028, TASK-010; US-028; UC-025; TC-061.
+- **Source:** Charter D1/D2 and DEC-020 through DEC-026; BR-018.
+
+### FR-040 — Optional financial profile
+
+The system shall maintain optional self-reported monthly income/expense estimates and explicit review dates.
+
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Omitting the profile does not block tracking or reports; estimated surplus is labeled; profile values never create balances or movements.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-030; US-029; UC-026; TC-062.
+- **Source:** Charter D9 and DEC-020 through DEC-026; BR-021.
+
+### FR-041 — Monthly schedule preferences
+
+The system shall allow each User to choose a monthly reporting schedule in their timezone.
+
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Schedules require explicit enablement; schedule edits affect future occurrences and do not overwrite earlier reports; local month boundaries are used.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-032; US-030; UC-027; TC-063.
+- **Source:** Charter D7 and DEC-020 through DEC-026; BR-022.
+
+### FR-042 — Generic reminder email
+
+The system shall send a reminder before the configured report occurrence to the verified User email.
+
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Subject/body/link contain no financial figures, goal or account names, attachments or bearer access to reports; email failure cannot block reporting.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-033; US-030; UC-027; TC-064, TC-045.
+- **Source:** Charter D7 and DEC-020 through DEC-026; BR-022, BR-024.
+
+### FR-043 — Authenticated saved monthly reports
+
+The system shall generate and store a private report for the previous local calendar month even without recent updates.
+
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Show missing/stale inputs and profile review dates; report reads require owner authentication; regeneration creates a new revision and no automatic Gemini call.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-031, TASK-032; US-031; UC-028; TC-066, TC-063.
+- **Source:** Charter D7 and DEC-020 through DEC-026; BR-019, BR-021, BR-022, BR-024.
+
+### FR-044 — Immutable snapshots
+
+The system shall store the exact source versions, values and limitations used by wealth snapshots and saved reports.
+
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Concurrent edits cannot create mixed-version snapshots; record period/as-of time, generated time, coverage, calculation version and revision; no silent historical replacement.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-010, TASK-031; US-011, US-031; UC-008, UC-028; TC-069.
+- **Source:** Charter D1/D7 and DEC-020 through DEC-026; BR-019, BR-023.
+
+### FR-045 — Sanitized system health
+
+The system shall expose operational health and account administration to Admin without financial contents.
+
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Show service status and sanitized job/backup failures; no balances, holdings, financial filenames, report bodies, prompts or per-user wealth totals.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-026, TASK-020; US-024; UC-021; TC-073.
+- **Source:** Charter D8 and DEC-020 through DEC-026; BR-024.
+
+### FR-046 — CI verification
+
+The system shall run repository checks and applicable synthetic tests in GitHub Actions.
+
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** CI uses no production data or deployment credentials, tests PostgreSQL behavior when introduced, and does not auto-deploy.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-023; US-032; UC-029; TC-070.
+- **Source:** Charter D10 and DEC-020 through DEC-026; BR-024.
+
+### FR-047 — Controlled deployment
+
+The system shall document a reviewed, manually authorized deployment to Pi 5 (8 GB), CasaOS, Docker Compose and Cloudflare Tunnel.
+
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Verify ARM64/runtime/images, persistence, restart, HTTPS/proxy settings, private database access and rollback before release; no workflow or plan grants deployment authority.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-024, TASK-020, TASK-021; US-032; UC-029; TC-044, TC-065.
+- **Source:** Charter D6/D10 and DEC-020 through DEC-026; BR-024.
+
+### FR-048 — Goal account links
+
+The system shall link complete owned accounts to goals without reserving cash.
+
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Database and service checks prevent an account funding two active goals; closure releases links atomically; no withdrawal restrictions.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-029; US-021; UC-018; TC-071.
+- **Source:** Charter D3 and DEC-020 through DEC-026; BR-020.
+
+### FR-049 — Observation revisions
+
+The system shall correct manual observations while preserving their earlier values and provenance.
+
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** A revision records its original and reason; historical snapshots stay unchanged; stale concurrent edits fail; no immutable transaction-ledger subsystem is required.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-004A2, TASK-004B, TASK-008B; US-026; UC-023; TC-059, TC-067.
+- **Source:** Charter D2 and DEC-020 through DEC-026; BR-016, BR-019, BR-023.
+
+### FR-050 — Freshness and review indicators
+
+The system shall track observation dates, recording dates and explicit profile review dates independently.
+
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** Viewing a page never refreshes data; confirming unchanged information is explicit; missing/stale data stays visible in dashboards, goals and reports.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-008A, TASK-010, TASK-030, TASK-031; US-009, US-029, US-031; UC-008, UC-026, UC-028; TC-072, TC-062.
+- **Source:** Charter D1/D7/D9 and DEC-020 through DEC-026; BR-013, BR-021.
+
+### FR-051 — Required Admin MFA
+
+The system shall require second-factor enrollment, challenge and safe recovery for application Admin.
+
+- **Priority / release:** Must / MVP
+- **Rationale:** Support the approved savings/wealth scope and privacy boundaries.
+- **Acceptance criteria:** No Admin operations before MFA; lost-factor recovery is controlled and invalidates relevant sessions; prototype synthetic login is explicitly not this release acceptance.
+- **Dependencies:** Applicable ownership/currency prerequisites and task DAG in the backlog; no deferred ledger or reservation dependency.
+- **Trace:** TASK-027; US-024; UC-021; TC-056.
+- **Source:** Charter D8 and DEC-020 through DEC-026; BR-024.
+
+## Retained requirements outside the MVP
+
+These identifiers are not recycled. Their original behavior remains at baseline `5052b5b`; they require future approval before implementation.
+
+| ID | Original requirement | Disposition / MVP successor |
+|---|---|---|
+| FR-006 | Holding transactions | Deferred ledger/reservations; simplified observations, movements and linked goals use FR-037/038/039/048. |
+| FR-007 | Income recording | Deferred ledger/reservations; simplified observations, movements and linked goals use FR-037/038/039/048. |
+| FR-008 | Expense recording | Deferred ledger/reservations; simplified observations, movements and linked goals use FR-037/038/039/048. |
+| FR-009 | Record correction and deletion | Deferred ledger/reservations; simplified observations, movements and linked goals use FR-037/038/039/048. |
+| FR-010 | Account transfers | Deferred ledger/reservations; simplified observations, movements and linked goals use FR-037/038/039/048. |
+| FR-013 | Monthly cash-flow reporting | Deferred ledger/reservations; simplified observations, movements and linked goals use FR-037/038/039/048. |
+| FR-017 | Savings reservations | Deferred ledger/reservations; simplified observations, movements and linked goals use FR-037/038/039/048. |
+| FR-025 | Authorized Telegram destination | Deferred Telegram; FR-041/042/043 are distinct new capabilities. |
+| FR-026 | Scheduled Telegram summaries | Deferred Telegram; FR-041/042/043 are distinct new capabilities. |
+| FR-027 | Goal reminders and updates | Deferred Telegram; FR-041/042/043 are distinct new capabilities. |
+| FR-028 | Notification preferences | Deferred Telegram; FR-041/042/043 are distinct new capabilities. |
+
+## Non-functional requirements
+
+### NFR-001 — Authenticated network boundary
+
+- **Priority:** Must for MVP (provider-specific Gemini checks later).
+- **Acceptance criteria:** Prototype is loopback-only with synthetic data. Release uses HTTPS tunnel ingress, private origin/database, validated host/proxy/CSRF settings and application authentication; tunnel admission alone grants no rights.
+- **Verification:** TC-053, TC-065; TASK-022A, TASK-026, TASK-020.
+
+### NFR-002 — Secrets and private records
+
+- **Priority:** Must for MVP (provider-specific Gemini checks later).
+- **Acceptance criteria:** Keep credentials, tokens, financial records, exports and backups outside Git and sanitized logs; restrict mounted data and secret-file access.
+- **Verification:** TC-038; TASK-022B, TASK-003, TASK-020.
 
 ### NFR-003 — External privacy
 
-External requests shall contain only user-approved minimized content.
+- **Priority:** Must for MVP (provider-specific Gemini checks later).
+- **Acceptance criteria:** Generic email contains no financial details; later Gemini requires exact one-call consent; Cloudflare transit and SMTP metadata dependencies are documented.
+- **Verification:** TC-036, TC-049, TC-064; TASK-033, TASK-014, TASK-015.
 
-- **Priority:** Must
-- **Rationale:** Protect accurate, private, maintainable local operation.
-- **Acceptance criteria:** Canceled Gemini requests cause zero calls; generated context contains no secrets, account labels, or free-form record notes; the verbatim question is separately shown for approval, without claiming automatic detection of personal details typed by the user; Telegram sends only approved report fields to the allowlisted private chat.
-- **Verification:** TC-036, TC-048, TC-049 in [TEST_PLAN](../testing/TEST_PLAN.md).
+### NFR-004 — Simple usable interface
 
-### NFR-004 — Usability
+- **Priority:** Must for MVP (provider-specific Gemini checks later).
+- **Acceptance criteria:** Server-rendered Django templates provide clear navigation, readable account cards, understandable labels/units, an intuitive creation form, preserved valid input and accessible error/empty/success states. Prototype owner can sign in, create an account and find its balance using page guidance alone.
+- **Verification:** TC-039, TC-053; TASK-022A, TASK-004A1, TASK-019.
 
-Common financial workflows shall expose units, validation errors, save outcomes, and clear empty states.
+### NFR-005 — Durability and atomicity
 
-- **Priority:** Must
-- **Rationale:** Protect accurate, private, maintainable local operation.
-- **Acceptance criteria:** Proposed threshold: the owner completes income entry, a transfer, and a goal reservation on a populated fixture within three minutes each, following only field labels and help; validation preserves valid form values.
-- **Verification:** TC-039 in [TEST_PLAN](../testing/TEST_PLAN.md).
+- **Priority:** Must for MVP (provider-specific Gemini checks later).
+- **Acceptance criteria:** Committed data survives restart; related observations, movements, revisions and submission guards commit together or not at all.
+- **Verification:** TC-040, TC-067; TASK-003, TASK-004A2, TASK-028.
 
-### NFR-005 — Reliability
+### NFR-006 — Modular maintainability
 
-Committed records shall survive normal restart and failed multi-record operations shall be atomic.
+- **Priority:** Must for MVP (provider-specific Gemini checks later).
+- **Acceptance criteria:** Pure financial calculations accept explicit dates and run without Django models, UI imports, network access or provider credentials.
+- **Verification:** TC-041; TASK-002, TASK-022B, TASK-014.
 
-- **Priority:** Must
-- **Rationale:** Protect accurate, private, maintainable local operation.
-- **Acceptance criteria:** Restart reproduces balances and allocations exactly; injected failure before commit changes no row in the logical operation. Host/disk failure recovery depends on the last valid backup; no zero-data-loss promise.
-- **Verification:** TC-032, TC-040, TC-051, TC-052 in [TEST_PLAN](../testing/TEST_PLAN.md).
+### NFR-007 — Measured Pi performance
 
-### NFR-006 — Maintainability
+- **Priority:** Must for MVP (provider-specific Gemini checks later).
+- **Acceptance criteria:** Target 10 invited users and 3 concurrent active sessions; proposed fixture 10000 observations, 200 holdings and 20 goals per user. Proposed warmed p95 calculation/read <=2 s and ordinary write <=1 s, excluding network/browser; approve thresholds before measurement on the Pi.
+- **Verification:** TC-042; TASK-024, TASK-019.
 
-Business calculations shall be independently testable without Streamlit or external clients.
+### NFR-008 — Integrity and ownership
 
-- **Priority:** Must
-- **Rationale:** Protect accurate, private, maintainable local operation.
-- **Acceptance criteria:** Domain modules import and run without UI/API dependencies; adapter failure tests use fakes; core calculations have no network or current-clock dependence unless a clock is explicitly supplied.
-- **Verification:** TC-041 in [TEST_PLAN](../testing/TEST_PLAN.md).
+- **Priority:** Must for MVP (provider-specific Gemini checks later).
+- **Acceptance criteria:** Enforce exact values, owned references, version checks and unique active goal links for all entry points; competing updates cannot lose changes or duplicate movements.
+- **Verification:** TC-043, TC-058, TC-067, TC-071; TASK-003, TASK-029, TASK-028.
 
-### NFR-007 — Performance
+### NFR-009 — Reproducible environments
 
-Dashboard reads and ordinary financial writes shall remain usable at the initial dataset scale.
+- **Priority:** Must for MVP (provider-specific Gemini checks later).
+- **Acceptance criteria:** Maintain separate loopback prototype and intended ARM64 Compose release procedures. CasaOS/Docker/OS/image compatibility remains later verification, not claimed support.
+- **Verification:** TC-044; TASK-024, TASK-020, TASK-021.
 
-- **Priority:** Must
-- **Rationale:** Protect accurate, private, maintainable local operation.
-- **Acceptance criteria:** Proposed: on 2 CPU cores, 8 GB RAM, local SSD, 10,000 transactions, 200 assets, and 20 goals, 95% of 30 warmed dashboard calculations finish within 2 seconds and 95% of 30 single-operation writes within 1 second; exclude API latency and browser rendering.
-- **Verification:** TC-042 in [TEST_PLAN](../testing/TEST_PLAN.md).
+### NFR-010 — Bounded external failures
 
-### NFR-008 — Data integrity
+- **Priority:** Must for MVP (provider-specific Gemini checks later).
+- **Acceptance criteria:** SMTP and later Gemini failures are bounded, redacted and cannot block core records or deterministic reports; ambiguous email attempts are not blindly resent. Proposed 15 s timeout needs review.
+- **Verification:** TC-045, TC-064; TASK-033, TASK-014.
 
-Relationships and cross-record financial invariants shall be enforced on every write path.
+### NFR-011 — Recoverability
 
-- **Priority:** Must
-- **Rationale:** Protect accurate, private, maintainable local operation.
-- **Acceptance criteria:** Foreign keys are enabled per connection; invalid references fail; two overlapping reservations cannot exceed available cash; negative holdings and invalid decimal representations are rejected; all dependent writes roll back together.
-- **Verification:** TC-033, TC-043, TC-051, TC-052 in [TEST_PLAN](../testing/TEST_PLAN.md).
+- **Priority:** Must for MVP (provider-specific Gemini checks later).
+- **Acceptance criteria:** Validate operator backups/restores independently; preserve live data on invalid restore and retain rollback path. Define recovery point/retention and approve measured targets before real data.
+- **Verification:** TC-034, TC-046; TASK-007A, TASK-007B, TASK-020.
 
-### NFR-009 — Local deployment
+### NFR-012 — Exact numeric correctness
 
-The documented local setup shall reproduce the core application without Gemini or Telegram credentials.
+- **Priority:** Must for MVP (provider-specific Gemini checks later).
+- **Acceptance criteria:** Use Decimal and integer minor units; reject nonfinite values, excess precision and overflow; final chart floats never feed persistence or financial calculations.
+- **Verification:** TC-035, TC-047; TASK-002, TASK-003, TASK-008A.
 
-- **Priority:** Must
-- **Rationale:** Protect accurate, private, maintainable local operation.
-- **Acceptance criteria:** A clean supported Linux environment completes the documented setup, starts on loopback, persists a sample entry, and restarts successfully; no cloud-hosting account or paid API is required.
-- **Verification:** TC-044, TC-052 in [TEST_PLAN](../testing/TEST_PLAN.md).
+### NFR-013 — Account and session security
 
-### NFR-010 — API failure handling
+- **Priority:** Must for MVP (provider-specific Gemini checks later).
+- **Acceptance criteria:** Use standard password/session protections, throttling, invitation/reset expiry and revocation, User isolation and required Admin MFA; no application-admin superuser bypass. All are mandatory before real users or sensitive data.
+- **Verification:** TC-054, TC-055, TC-056, TC-057, TC-058; TASK-025B, TASK-026, TASK-027, TASK-019.
 
-External calls shall have bounded timeouts and distinguish recoverable failure from financial-data failure.
+## M-009 Early Working Prototype acceptance
 
-- **Priority:** Must
-- **Rationale:** Protect accurate, private, maintainable local operation.
-- **Acceptance criteria:** Proposed timeout: 15 seconds per call. Interactive Gemini does not automatically retry; Telegram retries only transient definite failures, at most three attempts per occurrence, respecting Retry-After. Auth/config errors disable delivery with a redacted action message. Core writes remain available.
-- **Verification:** TC-045 in [TEST_PLAN](../testing/TEST_PLAN.md).
-
-### NFR-011 — Recovery
-
-Backup and restore procedures shall protect the live dataset and expose the recovery point.
-
-- **Priority:** Must
-- **Rationale:** Protect accurate, private, maintainable local operation.
-- **Acceptance criteria:** Supported backups pass integrity and relationship checks; corrupt restore attempts preserve live bytes; a stopped-writer restore is reversible from the pre-restore backup. Proposed recovery target: restore a fixture of 10,000 transactions in 10 minutes using the written procedure; recovery point is last successful user backup.
-- **Verification:** TC-029, TC-030, TC-034, TC-046, TC-052 in [TEST_PLAN](../testing/TEST_PLAN.md).
-
-### NFR-012 — Numeric correctness
-
-Financial calculations shall use exact decimal/integer arithmetic and explicit rounding policies.
-
-- **Priority:** Must
-- **Rationale:** Protect accurate, private, maintainable local operation.
-- **Acceptance criteria:** No binary floats enter persistence or business arithmetic; 0.10 + 0.20 equals 0.30; per-holding valuation rounds half-even to the reporting minor unit, totals sum those values, required contributions round upward, and out-of-range values fail before persistence.
-- **Verification:** TC-035, TC-047, TC-052 in [TEST_PLAN](../testing/TEST_PLAN.md).
-
-## M-001A acceptance profile — approved scope, planned verification
-
-DEC-015 approves the following **Must** milestone checks. They are scoped acceptance of existing requirements, not new FR IDs or proof that the broader FRs are complete. Full CRUD, trading, corrections, cash-flow reports, history, goals and integrations retain their later acceptance. M-004 remains at 92 hours. Specific rounding/precision/replay design proposals still require their recorded reviews.
-
-| Check ID | Acceptance criterion | Related requirements | Planned verification |
+| Check | Acceptance | Requirement scope | Executable leaves |
 |---|---|---|---|
-| M1A-01 | Start the documented Streamlit application on localhost with no API keys or network dependency; choose/fix one reporting currency and scale before financial entries; show clear setup/empty states. | FR-001, FR-002, FR-032; NFR-001, NFR-002, NFR-009 | TC-001, TC-002, TC-038, TC-044 applicable local checks; TC-052 |
-| M1A-02 | Create/select a basic account; manually register existing cash, currencies, gold, stocks and funds with declared units/quantities and optional initial base-currency prices; list the saved holdings, units, quantities, prices and outcomes. Registration is an opening, not a purchase or income event. | FR-003, FR-004, FR-006 | TC-003, TC-004, TC-006 opening checks; TC-052 |
-| M1A-03 | Base cash is valued at one; deterministic exact arithmetic and reviewed rounding give 1200 for cash 1000 plus 10 units at 20. Show dated prices, per-holding values and total/qualified asset-only estimate. Unpriced positive holdings create an explicitly incomplete priced subtotal, never an assumed zero. Stale prices retain their value with a warning using the reviewed threshold. | FR-005, FR-011, FR-012; NFR-012 | TC-005, TC-011, TC-012, TC-035, TC-047 applicable checks; TC-052 |
-| M1A-04 | Validate required fields, account/asset references, units, finite positive quantities/prices, monetary precision/bounds and nonfuture financial dates. Use SQLite foreign keys and one transaction for the new definition, opening posting and optional initial price. Injected failures/invalid inputs leave all pre-existing balances unchanged and no orphan/partial registration; never maintain a separate editable balance or store financial floats. | FR-002, FR-004, FR-005, FR-006, FR-032; NFR-005, NFR-008, NFR-012 | TC-040, TC-043, TC-047 opening checks; TC-051, TC-052 |
-| M1A-05 | Restart and reopen the same SQLite dataset; committed asset definitions, postings, prices and exact total are retained. Interrupted/failed operations do not appear as committed holdings. | FR-032; NFR-005 | TC-032, TC-040, TC-044 applicable checks; TC-052 |
-| M1A-06 | A rerun, double submission or retry of the same opening intent creates exactly one definition/opening/price set, including when its logical submission key is replayed after restart. Same-key different-payload reuse fails without mutation; a failed rolled-back attempt can be retried safely. Distinct explicitly new commands are not suppressed merely because values match. | FR-006, FR-032; NFR-005, NFR-008 | TC-051; TC-052 |
-| M1A-07 | Before personal data is used, produce a consistent local SQLite backup; validate restore schema/integrity/relations/financial invariants before replacement, confirm replacement, stop writers, keep a safety backup, and verify reopening/rollback. A small opening/price fixture round-trips exactly; corrupt/incompatible input leaves live data unchanged. CSV is not required at this gate or represented as a backup. | FR-029, FR-030; NFR-011 | TC-029, TC-030, TC-034, TC-046 applicable small-fixture checks; TC-052 |
-| M1A-08 | Record actual results for all applicable checks above, document local startup/validation/recovery and milestone limitations, and obtain owner acceptance with no unresolved integrity, data-loss or disclosure defect. The first dashboard has no direct balance edits, unit changes, income/expense/trade/transfer/correction/goal workflows or API calls; later requirements stay planned. | FR-001, FR-006, FR-029, FR-030, FR-032; NFR-005, NFR-008, NFR-011 | TC-052 and manual milestone evidence review; no execution is claimed now. |
+| P1-01 | Start Django locally on loopback with synthetic data and a visible development banner; no PostgreSQL/cloud/deployment prerequisite. | FR-001, FR-032; NFR-001 | TASK-022A |
+| P1-02 | Use a locally provisioned synthetic identity with standard Django hashing, sessions, login/logout and CSRF; anonymous protected-page access fails. | FR-034; NFR-013 scoped foundations only | TASK-025A |
+| P1-03 | Clear Dashboard/Accounts navigation, active-page indication, readable account cards showing name/currency/balance, understandable empty state and a visible create-account action. | FR-003, FR-037; NFR-004 | TASK-022A, TASK-004A1 |
+| P1-04 | Intuitive labeled account-creation form accepts exact nonnegative synthetic opening balance, explains errors, preserves valid input and displays a clear success outcome. No frontend framework/SPA. | FR-003, FR-037; NFR-004, NFR-012 scoped input checks | TASK-004A1 |
+| P1-05 | Saved account/balance survives refresh and restart; synthetic opening is not recorded as new savings; no external call or public exposure. | FR-032, FR-037; NFR-005 scoped persistence | TASK-004A1 |
+| P1-06 | Record focused tests and owner demonstration for sign-in, navigation, create, cards and logout, including desktop/narrow view readability. No real-user, financial privacy, MFA or production claim. | NFR-004; TC-039, TC-053 | TASK-022A, TASK-025A, TASK-004A1 |
 
-Milestone Definition of Done: all eight checks have evidence and TASK-001, TASK-002, TASK-003, TASK-004A, TASK-005A, TASK-008A and TASK-007A are completed under their own criteria. These leaves sum to 32 hours already in the baseline. Financial/recovery safety cannot be waived to fit an estimate. See [WBS](../planning/WBS.md) and [schedule](../planning/PROJECT_SCHEDULE.md).
+TC-053 verifies the complete prototype; TC-039 verifies its usability subset. The 8+4+4 hours are part of the 264-hour baseline. Partial TC-039/FR/NFR evidence must be reported by scenario; it never satisfies full release security, recovery or owner acceptance.
 
-## 5. Business rules
+## M-001A wealth dashboard and basic recovery acceptance
 
-The financial policies below are proposed design refinements unless explicitly backed by an owner choice. Review DEC-010 before implementing money/history rules; no regulated accounting compliance is claimed.
+| Check | Acceptance | Evidence planned |
+|---|---|---|
+| W1-01 | Authenticated synthetic PostgreSQL account/holding observations and dated manual prices yield exact qualified totals, with clear account cards. | TC-059, TC-068 |
+| W1-02 | Preserve missing/stale flags, owned references, revision history, atomic update/replay and restart behavior. | TC-040, TC-043, TC-067, TC-072 |
+| W1-03 | A validated operator backup/restore with safety copy preserves ownership and exact wealth; invalid input leaves live data intact. | TC-034, TC-046, TC-068 |
+| W1-04 | Record synthetic owner demonstration and limitations; no real-user/data admission before M-007. | TC-068 and owner review |
 
-| ID | Rule and observable example |
-|---|---|
-| BR-001 | Fix one reporting currency and minor-unit scale before the first record. Foreign currency is an asset unit, valued with a manually entered base-currency price. Do not mix original-currency amounts into totals. |
-| BR-002 | Holdings equal effective signed postings per account/asset. Value each holding with the last active price effective on/before the valuation date; base cash price is always 1. Round each holding half-even to the currency minor unit, then sum. No borrowing, shorts, margin, or negative holdings. |
-| BR-003 | Savings = monthly income − monthly expenses. Savings rate = savings / income × 100 only for income > 0, displayed to two decimal places. Income 300 and expense 100 produce 200 and 66.67%. Opening balances, transfers, adjustments, purchases/sales, and unrealized gains are excluded. |
-| BR-004 | A transfer has equal/opposite base-cash postings in distinct accounts and no income/expense classification. All postings commit together. Portfolio value changes only if holdings/prices change, never by counting both a movement and its destination as new income. |
-| BR-005 | Total assets is the sum of priced holdings. The asset-only net-worth estimate equals that sum and always states liabilities are excluded. Goal balances are not added. Missing prices qualify both figures as incomplete; stale observations remain included but warned. |
-| BR-006 | A purchase adds a positive asset quantity and removes a stated positive base-cash settlement; a sale does the reverse. Neither is household income/expense. Record transaction fees, when entered, as separate expenses and exclude them from the stated settlement amount to avoid counting them twice. No automated order execution or gain-tax accounting is provided. |
-| BR-007 | Reservations are positive base-currency minor-unit amounts per source account and goal. Sum(active reservations for account) ≤ current account base cash. Spending/transferring/trading/correcting below that bound is rejected until the user explicitly releases funds. An adjustment is not an automatic release. |
-| BR-008 | Reserved goal total is the sum of its active reservations. Remaining = max(target − reserved, 0). Progress = reserved / target × 100; the bar caps at 100%, while excess remains separately visible. Editing target lower does not create or destroy cash. |
-| BR-009 | With owner-local today ≤ deadline, monthly opportunities = 12 × (deadline year − current year) + deadline month − current month + 1. This includes the current and deadline month; deadline today gives one. Required monthly contribution = ceiling_to_minor_unit(remaining / opportunities). Overdue underfunded goals show overdue and no monthly amount; funded goals return zero. This assumes contributions can begin this month, not a predictive model. |
-| BR-010 | Records use a user-selected local financial date, not a UTC date inferred later. Future-dated financial events/prices are rejected in v1. Corrections reverse originals at the original effective date and replace at the selected date; restated charts change and remain labeled restated. Revalidate dated holdings and today's reservations atomically. No allocation-history trend is promised. |
-| BR-011 | Decimal inputs must be finite and within signed 64-bit storage bounds after monetary scaling. Monetary entries with excess fractional digits are rejected, not silently rounded. Quantity/price inputs use at most 8 fractional digits (proposed); price × quantity uses exact arithmetic before per-holding rounding. UI charts may convert final values for display only. |
-| BR-012 | AI receives approved computed context and untrusted user text only. Its generated numbers/explanations are not authoritative inputs to financial calculations, reports, allocations, or writes. Any contradictory AI text remains labeled unverified explanation beside authoritative computed figures. |
-| BR-013 | Proposed stale threshold: observation older than 7 calendar days. Missing price is not zero. Historical dates use only observations effective by that date; corrections intentionally restate prior results, with an audit trail rather than a claim of original-as-known reporting. |
-| BR-014 | Notification content comes from deterministic summaries, not automatic Gemini calls. One private recipient and explicit content/schedule consent are required. No inbound commands, webhook, or polling endpoint exists in v1; requests sent to the bot cannot disclose data or modify records. |
-| BR-015 | The local runner sends at most the latest due occurrence per enabled rule after downtime. Acknowledged occurrences never resend automatically. Definite transient failures allow at most three attempts; ambiguous outcomes are marked uncertain for explicit user resolution, since exactly-once delivery across Telegram and SQLite cannot be guaranteed. |
+The old M1A-01–M1A-08 checks belonged to DEC-015's SQLite/Streamlit ledger profile. They are superseded by P1-01–P1-06 and W1-01–W1-04, not marked passed. Their original text and TC-052 remain historical.
 
-## 6. Coverage, priorities, and unresolved decisions
+## Financial and operational business rules
 
-| Charter area | Requirements |
-|---|---|
-| Local deployment, configuration, persistence | FR-001, FR-002, FR-032; NFR-001, NFR-002, NFR-005, NFR-009 |
-| Accounts, assets, quantities, transactions | FR-003 through FR-010; NFR-008, NFR-012 |
-| Dashboard and manual valuation | FR-005, FR-011 through FR-015; NFR-004, NFR-007 |
-| Goals | FR-016 through FR-019 |
-| Gemini | FR-020 through FR-024; NFR-003, NFR-010 |
-| Telegram | FR-025 through FR-028; NFR-003, NFR-010 |
-| Backup, restore, CSV | FR-029 through FR-031; NFR-011 |
-| Modularity and automated verification | NFR-006; all planned cases in the RTM |
+| ID | Status | Rule |
+|---|---|---|
+| BR-001 | Current | One reporting currency/scale per User, fixed after financial data exists; manually price foreign units in it. |
+| BR-002 | Amended; rounding proposed under OQ-002 | Latest eligible balance/quantity observations and dated prices determine value. Proposed half-even rounding per holding, then sum; cash in reporting currency has price one. No negative holdings. |
+| BR-003 | Deferred | Original actual income-minus-expenses and savings-rate rule requires the deferred transaction ledger. Profile estimates do not satisfy it. |
+| BR-004 | Deferred | Original equal/opposite transfer postings are deferred. MVP internal-movement classification follows BR-017. |
+| BR-005 | Current | Tracked wealth is priced cash/holdings once; liabilities are excluded; missing prices qualify the subtotal. Goal links and profile estimates add no assets. |
+| BR-006 | Deferred | Original trade settlement, fees and transaction posting policy is outside MVP. |
+| BR-007 | Deferred | Original cash-reservation bounds and spending restrictions are outside MVP. |
+| BR-008 | Superseded by BR-020 | Original reservation-derived goal progress is replaced by linked account value. |
+| BR-009 | Retained proposal under OQ-002 | Monthly opportunities include current and deadline month: 12*(deadline.year-today.year)+deadline.month-today.month+1 when not overdue. Ceiling-to-minor-unit of remaining/opportunities; funded zero; overdue underfunded unavailable. This is an indicative plan. |
+| BR-010 | Superseded for MVP by BR-016 and BR-019 | Original reversal/replacement ledger corrections and historical-balance validation are deferred. |
+| BR-011 | Exactness mandatory; limits proposed under OQ-002 | Reject NaN/infinity, excess fractional monetary digits and signed-64-bit minor-unit overflow. Proposed quantity/price precision <=8 fractional digits; use exact Decimal multiplication. Presentation-only float conversions never feed back. |
+| BR-012 | Later Gemini | AI is untrusted explanation, never authoritative arithmetic or write input. Explicit exact one-call consent; no autonomous financial tools or personalized security buy/sell recommendations. |
+| BR-013 | Amended; thresholds proposed under OQ-003 | Retain separate quantity/balance observation dates and price dates; missing is not zero. Proposed stale prices >7 calendar days and profile review >30 days. Page views/carry-forward do not refresh timestamps. |
+| BR-014 | Deferred | Original approved-field Telegram notification rule is deferred. Email privacy follows BR-022. |
+| BR-015 | Deferred | Original Telegram retry/catch-up policy is retained historically. Revised report/email policy is BR-022 pending OQ-005. |
+| BR-016 | Current; revision details OQ-002 | User supplies dated balance/quantity observations; initial observations establish a baseline, not new savings. Keep effective and recorded times and original revisions. Removing a holding is a zero observation, not physical deletion of history. |
+| BR-017 | Current | Movement amount is positive reporting-currency minor units with contribution/withdrawal/internal kind and effective date. Net external contributions = contributions - withdrawals; internal movements across tracked accounts =0. An annotation explains an observation and never adds to its balance. In-kind additions require a user-supplied amount or make attribution unknown. |
+| BR-018 | Current | Recorded wealth change requires comparable endpoint coverage. Supported residual = end - start - net external contributions only with explicit interval-completeness assertion and adequate dated valuations. Missing classification, stale/incomplete endpoints, changed coverage or revised inputs invalidate attribution. Residual includes other effects and is not investment profit, TWR/IRR or a return percentage. |
+| BR-019 | Current | Snapshots/reports freeze source versions, as-of/period, generation time, exact values, currency, coverage, warnings and calculation version. Corrections can produce a new revision; never silently overwrite a saved snapshot or backfill a past date with a newer observation. |
+| BR-020 | Current | A whole owned account links to at most one active goal. Progress value=sum(linked account values), remaining=max(target-progress,0), bar caps at 100% with excess shown separately. No reserved balance or withdrawal block; incomplete value qualifies progress. Closure ends links without changing wealth. |
+| BR-021 | Current | Profile income/expense values are optional monthly estimates; estimated surplus=estimated income-estimated expense, labeled as such. They never create actual savings/movements. Explicit save/review-unchanged updates review time; views do not. |
+| BR-022 | Proposed operations under OQ-005 | Previous local calendar month is the report period. Report generation is independent of input freshness and email. Proposed monthly day 1-28/time, reminder lead 3 days, latest due occurrence after downtime, first repeated DST instant/next valid nonexistent instant. Unique occurrence claims prevent duplicate reports; definite email failure may retry up to 3 times, ambiguous send requires review. No financial content or bearer report link in email. |
+| BR-023 | Current; replay mechanism OQ-007 | Save related observations, movements and submission guard in one database transaction. Same owner/key/payload returns the original result; changed payload rejects. Version checks prevent lost updates. No network call under write locks; snapshot reads are coherent. |
+| BR-024 | Current | Owner identity is server-derived. Admin has no financial access, impersonation or account-takeover path; Users cannot choose another owner. Operator backups are outside Admin UI. Release gating applies before real users/sensitive data. CI and deployment plans never grant operational authorization. |
 
-All 32 functional requirements and 12 NFRs are Must for the complete baseline; Should/Could priorities are reserved for optional future backlog candidates. This avoids silently downgrading Charter deliverables. API features are runtime optional, not omitted from release acceptance.
+## Acceptance and open gates
 
-Open approvals and proposed thresholds are centralized in [DECISION_LOG](../DECISION_LOG.md). Stories/use cases refine these requirements; they cannot silently expand scope. See [RTM](RTM.md) for planned coverage, not implementation evidence.
+Recorded wealth change and reported net contributions remain distinct. Only comparable complete endpoints and an explicit version-bound completeness assertion support a residual; otherwise attribution is unknown. No balance increase alone establishes investment performance.
+
+OQ-002/003/005/006/007/008/009/010/011 retain task-specific gates in the [Decision Log](../DECISION_LOG.md). The owner approved product direction and estimates, not every numeric threshold, library, deployment version or recovery policy. [RTM](RTM.md) maps current and retired requirements; [Test Plan](../testing/TEST_PLAN.md) distinguishes historical TASK-001 evidence from planned execution.

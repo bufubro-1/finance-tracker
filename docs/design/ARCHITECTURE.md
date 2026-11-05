@@ -1,166 +1,107 @@
-# Finance Tracker — Software Architecture
+# Finance Tracker — Architecture
 
-Status: Proposed design; all components below are **Planned**. The Charter stack and confirmed owner choices are inputs; this document does not describe existing application code. See [SRS](../requirements/SRS.md), [DATA_MODEL](DATA_MODEL.md), and [DECISION_LOG](../DECISION_LOG.md).
+Status: Approved target direction (DEC-020 through DEC-026); mechanisms and compatibility retain the gates in the Decision Log. Intended release environment: Raspberry Pi 5 (8 GB), CasaOS, Docker Compose and Cloudflare Tunnel with HTTPS. Existing code remains the accepted TASK-001 Streamlit runtime shell. This revision implements no Django, database, CI or infrastructure.
 
-## 1. Architectural overview
+## Modular monolith and prototype-first delivery
 
-A modular monolith runs on one owner-controlled host. Streamlit renders forms and charts; Python application services validate operations and orchestrate deterministic domain calculations; repository interfaces persist to one local SQLite dataset. Pandas prepares view data and Plotly renders charts after authoritative calculations. Neither DataFrame float coercion nor chart values are sources for financial arithmetic.
+Use Django server-rendered pages and standard authentication foundations, Python application services, independently testable exact financial functions and PostgreSQL. Pandas/Plotly are optional presentation helpers, not mandatory early dependencies or authoritative arithmetic. One scheduled management command shares the same services; no queue/broker, separate frontend application, microservices or scheduler inside page requests.
 
-The same modules serve an optional local notification command invoked by the host scheduler. This is another entry point to the monolith, not a separate network service. It must not initialize itself inside Streamlit reruns. Core services do not import Gemini or Telegram clients. Dependency construction chooses disabled/fake/live adapters at the boundary.
+M-009 uses the first 16 hours of existing packages: TASK-022A (8), TASK-025A (4), TASK-004A1 (4). Deliver Dashboard/Accounts navigation, readable name/currency/balance cards, clear empty state, intuitive validated account form and a synthetic-data banner. Standard login/logout/CSRF and initial owner relationships exist from the first slice. A locally provisioned synthetic identity and disposable SQLite database remove PostgreSQL/cloud setup from that demo. Start the intended custom Django user model and reusable Account/cash-observation model from the first migrations; extend rather than replace those foundations later. Never import real data into this database or treat it as a production migration source.
 
-### Planned component catalog
+All intermediate work remains synthetic. PostgreSQL/ownership hardening, full membership, Admin MFA, privacy, recovery and final system/deployment verification are release gates before real users or sensitive data. The early slice does not require finished CI or Pi infrastructure.
 
-| ID | Component | Responsibilities and boundary |
+## Components
+
+| ID | Component | Boundary |
 |---|---|---|
-| CMP-001 | Streamlit presentation | Forms, field errors, explicit confirmations, exact AI/report previews, dashboard/goal views, Plotly visualizations. Calls services; no direct SQL or API requests. |
-| CMP-002 | Configuration and startup | Environment validation, paths, currency initialization, loopback-first startup, supported-version checks, deployment instructions. Tokens stay in process configuration. |
-| CMP-003 | Financial ledger | Accounts/assets, manual holding events, income/expenses, transfers, corrections, signed postings, dated nonnegative balances. Coordinates reservation checks before cash debits. |
-| CMP-004 | Valuation and reporting | Dated prices, completeness/staleness, asset-only totals, distribution, monthly savings, restated historical series. Pure exact arithmetic before presentation conversion. |
-| CMP-005 | Goals | Target lifecycle, cash reservation/release, progress, monthly opportunities, required contributions. Shares a unit of work with ledger operations affecting reserved cash. |
-| CMP-006 | Persistence | Connection setup, repositories, schema/version metadata, foreign keys, explicit transactions, safe write contention handling. No UI or external API logic. |
-| CMP-007 | Gemini integration | Minimized immutable context, per-request approval binding, bounded request, response labeling/redaction. Read-only access to computed snapshots; no financial-write tools. |
-| CMP-008 | Telegram integration | Private-recipient validation, content preferences, destination checks, non-financial connection test, outbound delivery and error classification. No inbound interface. |
-| CMP-009 | Local scheduled runner | Evaluate due rules, claim occurrence, build deterministic report, invoke Telegram outside the database transaction, finalize delivery outcome. Handle missed/uncertain occurrences. |
-| CMP-010 | Data portability and recovery | Consistent SQLite backup, candidate validation, documented stopped-writer restore, CSV serialization and formula-text protection. Never exports environment credentials. |
+| CMP-001 | Django presentation | Server-rendered forms, navigation, readable cards, dashboard/goal/profile/report views; minimal CSS, no SPA. Prototype usability first. |
+| CMP-002 | Configuration and runtime | Separate prototype/release settings, secrets, CI and intended Pi/CasaOS/Compose/Tunnel operating boundary. |
+| CMP-003 | Historical ledger component | Deferred; original posting/transaction subsystem is not part of the MVP. |
+| CMP-004 | Valuation, history and reports | Pure exact wealth/projection calculations, coherent immutable snapshots, completeness and honest residual attribution. |
+| CMP-005 | Goals | Owned targets and account links; qualified progress, no cash reservation or spending restriction. |
+| CMP-006 | Persistence | Django ORM/repository and transaction boundaries, PostgreSQL ownership constraints, version/replay guards; prototype SQLite subset only. |
+| CMP-007 | Later Gemini boundary | Minimized exact one-call consent, bounded request, labeled untrusted explanation; no write tools. |
+| CMP-008 | Historical Telegram component | Deferred; not reused as the email implementation. |
+| CMP-009 | Scheduled command | One scheduled management-command entrypoint, unique occurrence claims, prior-month report generation and reminder scheduling. |
+| CMP-010 | Portability and recovery | User-only exports, operator PostgreSQL backup/restore, validation, safety copy and rollback. |
+| CMP-011 | Identity and authorization | Django user/session foundations, invitations, Admin/User policy, Admin MFA, ownership guards and sanitized health. |
+| CMP-012 | Savings observations and movements | Atomic manual updates and revisions, contribution/withdrawal annotations, completeness assertions and no duplicate balance effects. |
+| CMP-013 | Financial profile | Optional manually maintained monthly estimates, explicit review dates and estimate labeling. |
+| CMP-014 | Email boundary | Generic reminder and membership/reset emails to intended verified addresses; no financial report delivery or report bearer token. |
 
-### Component diagram
+## Service interfaces and data flow
 
-```mermaid
-flowchart LR
-    User["Personal User"] --> UI["CMP-001 Streamlit UI"]
-    Config["CMP-002 Configuration"] --> UI
-    UI --> Ledger["CMP-003 Ledger"]
-    UI --> Reports["CMP-004 Valuation and reporting"]
-    UI --> Goals["CMP-005 Goals"]
-    UI --> AI["CMP-007 Gemini boundary"]
-    UI --> TG["CMP-008 Telegram boundary"]
-    UI --> Portability["CMP-010 Backup restore CSV"]
-    Ledger <--> Goals
-    Ledger --> Store["CMP-006 Repositories and transactions"]
-    Reports --> Store
-    Goals --> Store
-    Portability --> Store
-    AI --> Reports
-    AI --> Goals
-    AI --> Gemini["External Gemini API"]
-    Scheduler["Host scheduler"] --> Runner["CMP-009 Local runner"]
-    Config --> Runner
-    Runner --> Reports
-    Runner --> Goals
-    Runner --> Store
-    Runner --> TG
-    TG --> Store
-    TG --> Telegram["External Telegram Bot API"]
-    Store --> DB[("Local SQLite")]
-    Portability --> Files["Owner-controlled backups and CSV"]
-```
+These are conceptual in-process contracts, not a new public HTTP API. Every request/service receives server-authenticated owner context; a client-supplied owner ID is never authoritative.
 
-Arrows show dependency/invocation, not a separate deployment for each component. Ledger and goals collaborate within one unit of work; they do not call remote services or open competing nested write transactions.
-
-## 2. Interfaces and data flow
-
-These are proposed conceptual Python interfaces, not implemented public APIs or HTTP endpoints. Module names and exact signatures can follow the repository style during implementation without changing these responsibilities.
-
-| Boundary | Input → output / guarantees |
+| Boundary | Input and result |
 |---|---|
-| Ledger service | Validated dated transaction intent → committed transaction ID or structured validation failure. Integer cash deltas, exact quantities, and the reservation check share one unit of work. |
-| Reporting service | As-of date/period → immutable summary with currency/scale, per-holding values, priced subtotal, missing/stale flags, cash flows. No provider calls. |
-| Goal service | Goal/reservation command or as-of query → persisted result/projection. Allocation commands enforce the current source cash bound atomically. |
-| Persistence unit of work | Explicit begin/commit/rollback around one financial operation. All repositories use that connection; no commit hidden inside a repository method. |
-| Gemini adapter | Immutable approved question/context payload → untrusted text or typed timeout/quota/auth/provider failure. Never accepts SQL, tool definitions, or write callbacks. |
-| Telegram adapter | Validated configured recipient plus approved deterministic message → provider acknowledgement, definite failure, or uncertain outcome. Caller cannot override recipient silently. |
-| Notification runner | Supplied current instant and saved rules → claimed/finalized delivery records; no change to holdings/goals. |
-| Portability service | Local destination or restore candidate → validated artifact/outcome. CSV is not a complete restore format. |
-
-### Logical data-flow diagram
-
-```mermaid
-flowchart TD
-    U["Personal User"] -->|"Manual entries"| V["Validate financial intent"]
-    V -->|"One atomic operation"| L[("Local financial records")]
-    L --> C["Deterministic calculations"]
-    C --> D["Dashboard and goals"]
-    D --> U
-    C --> M["Minimize context"]
-    U -->|"Question"| M
-    M --> P["Exact payload preview"]
-    P -->|"User approves this payload"| G["Gemini request boundary"]
-    G --> X["External Gemini API"]
-    X --> A["Labeled untrusted explanation"]
-    A --> U
-    U -->|"Approve destination fields schedule"| N[("Notification settings")]
-    H["Host scheduler tick"] --> R["Claim latest due occurrence"]
-    N --> R
-    C --> R
-    R --> T["Allowlisted Telegram send"]
-    T --> E["External Telegram Bot API"]
-    E --> U
-    T --> O[("Delivery outcome log")]
-    L --> B["Consistent backup or CSV"]
-    B --> F["Owner-controlled files"]
-    F -->|"Validated backup and explicit restore"| Q["Stopped-writer recovery"]
-    Q --> L
-```
-
-There is deliberately no AI-to-ledger or Telegram-command-to-ledger flow. The delivery log contains operational outcome metadata, not full report bodies. Environment secrets are not part of financial records, exports, or AI context.
-
-### Financial operation flow
-
-1. UI validation gives quick field feedback; domain validation is authoritative for all entry points.
-2. A write service begins one SQLite write transaction, validates referenced records, dated holdings, and current reservations, then writes headers/postings or reservation changes.
-3. On failure, roll back everything and return a structured error. On success, commit once and invalidate affected view caches.
-4. Read summaries from a coherent committed snapshot; never display a new balance with an old allocation total. A cached view must include dataset revision and relevant date/settings, or be recomputed.
-
-### M-001A delivery boundary and opening registration
-
-Approved DEC-015 delivers Streamlit registration/listing plus deterministic totals at 32 cumulative hours; M-004 retains full core acceptance at 92 hours. Use CMP-001/002/003/004/006/010 for the early slices; APIs remain disabled and no goal/cash-flow/transfer/correction UI is exposed. Schema foundations are retained for later features, not replaced by a second provisional dataset.
-
-Register existing holdings by one application-service operation: validate the intent, persist any new asset definition, opening posting and optional initial price atomically, then read committed quantities/values. UI code never performs these as independent commits or directly edits a balance. An invalid input or injected failure rolls back the entire registration. The UI preserves a logical submission identity for reruns/retries; a durable guard is required, rather than relying only on button state or session memory. DEC-016 proposes SQLite uniqueness plus a canonical-request fingerprint; review the mechanism under OQ-007 before schema/opening implementation.
-
-Exact monetary arithmetic, dated valuation, incomplete/stale-price labels, restart persistence and essential backup/restore are already required at M-001A. Local-only startup is sufficient here; full LAN admission/recovery rehearsals still apply to the broader core/release gates. Tested small-fixture startup/recovery instructions are part of early tasks, not first written during phase 7. See the SRS M1A acceptance profile and TC-051/052; none is executed yet.
-
-### External integration flow and failure handling
-
-Gemini receives only approved computed aggregates, valuation warnings, and the explicit question. Account labels, transaction notes, tokens, and raw ledger rows are excluded from generated context. User-typed questions are shown verbatim for approval; automatic detection of all personal information in user text is not promised. Editing the question or changing the underlying summary invalidates the consent binding. Consume approval for one call before transmission so a Streamlit rerun cannot silently resend the same approved request. AI responses remain untrusted and cannot change records, even when they contain instructions or invented figures.
-
-Telegram settings start disabled. Validate one private chat, send a deliberate non-financial connection test, and require owner confirmation before enabling financial messages. The owner may need to initiate the bot chat in Telegram; Finance Tracker does not read/process the incoming message. Recheck the saved allowlist and enabled rule immediately before send. Configure reminder/progress updates at an explicit owner-selected cadence; no automatic Gemini calls are involved.
-
-Proposed runner cadence: host invocation every minute while notifications are enabled. Select due periods using saved local timezone; skip nonexistent daylight-saving wall times to the next valid instant and use the first occurrence of repeated wall time, with one unique occurrence key. Do not hold a SQLite write transaction during network calls. Claim a delivery in a short transaction, send, then finalize its status. A crashed in-flight attempt becomes uncertain on restart and is not automatically reclaimed. An explicit dashboard action can mark it skipped or request one resend with a duplicate-risk notice. This policy requires OQ-005 review.
-
-Use the SRS proposed 15-second per-call timeout. Gemini has no automatic retries or background generation. Telegram retries only definite transient failures up to three attempts total, respects Retry-After, persists the next attempt time, and never sleeps while holding a database lock. Missing configuration/auth failures stop that rule's delivery with a redacted actionable message. Disablement is rechecked before retry; it prevents new attempts, but a request already in flight may complete and its outcome remains visible. The latest missed period only is considered after downtime; no delivery guarantee exists while the host is asleep/offline.
-
-## 3. Deployment architecture
+| Observation update | Owned accounts, observed balances/quantities/dates, optional movement annotations, expected versions and submission identity -> atomic saved batch or structured rejection. |
+| Valuation/history | Owned coherent source versions and as-of date -> exact values, currency, missing/stale flags, coverage and immutable snapshot. |
+| Attribution | Comparable snapshots, dated reported flows and version-bound completeness assertion -> recorded change, reported net contribution, supported residual or unknown with reason. |
+| Goal | Owned target/account-link command or dated query -> qualified progress and indicative contribution; never cash locking. |
+| Profile | Optional estimates or explicit unchanged review -> saved review time; no balance/movement write. |
+| Report runner | Supplied instant and owned schedules -> claimed occurrence and immutable prior-month report; independent of SMTP or profile update. |
+| Email | Approved generic template, intended verified recipient and occurrence key -> acknowledgement/definite failure/uncertain metadata; no financial payload. |
+| Later Gemini | Exact approved immutable minimized context/question -> untrusted explanation or bounded redacted failure; no SQL/tools/write callbacks. |
+| Recovery | Separately authorized operator backup/candidate -> validated artifact or stopped-writer restore with rollback and session/job safeguards. |
 
 ```mermaid
 flowchart LR
-    Browser["Browser on explicitly trusted device"] --> Firewall["Host firewall allowlist"]
-    subgraph Host["Owner-controlled local host"]
-        Firewall --> App["Streamlit Python process"]
-        Timer["Host scheduler"] --> Command["Optional notification command"]
-        Env["Private environment configuration"] --> App
-        Env --> Command
-        App --> Disk[("SQLite on local disk")]
-        Command --> Disk
-        App --> Backup["Local backups and exports"]
-    end
-    App -->|"Approved HTTPS request only"| Gemini["Gemini API"]
-    App -->|"Validate recipient and connection test"| Telegram["Telegram Bot API"]
-    Command -->|"Approved destination via HTTPS"| Telegram["Telegram Bot API"]
+    User --> UI["Django pages"]
+    UI --> Auth["Identity and owner guards"]
+    Auth --> Updates["Observations and savings annotations"]
+    Auth --> Goals["Goals and optional profile"]
+    Auth --> Values["Exact valuation and snapshots"]
+    Updates --> Store["Owned ORM / transaction boundary"]
+    Goals --> Store
+    Values --> Store
+    Store --> DB[("PostgreSQL")]
+    Tick["Scheduled command"] --> Occurrence["Unique due occurrence"]
+    Occurrence --> Values
+    Occurrence --> Reports["Private saved reports"]
+    Reports --> Store
+    Occurrence --> Mail["Generic email adapter"]
+    Admin --> Health["Membership / sanitized health"]
+    Health --> Auth
+    Operator --> Recovery["Backup and recovery"]
+    Recovery --> DB
 ```
 
-Loopback-only use needs no LAN admission. For LAN use, bind explicitly to the intended interface and apply firewall rules before exposure; never port-forward the dashboard. The host and optional command share the same owner account, dataset path, validated configuration, and pinned application environment. OS scheduling is an operational dependency, not application cloud infrastructure. Startup and scheduled command failure must be visible through sanitized status/logs.
+Update service validates exact amounts and owned references, checks versions/replay, writes observations/movements/guard in one short transaction and invalidates only owned caches. A reported contribution describes the entered balance; it never adds to it again. PostgreSQL must serialize competing edits to affected accounts or reject stale versions; lock acquisition ordering and replay mechanism are reviewed at OQ-007. Snapshot queries use one coherent committed view, not independently refreshed cards/report sections. Never hold write locks during SMTP/Gemini requests.
 
-Restore is a maintenance operation: stop the UI and scheduled command, validate a candidate copy, make a recovery backup, replace only after confirmation, and reopen/verify before resuming. Do not replace a live SQLite file under active processes.
+Current values come from eligible latest observations and dated manual prices. Revision preserves originals; zero observations close holdings. Saved snapshots/reports are immutable; new revision is explicit. An interval-completeness assertion binds endpoints, account coverage and movement/source revision; changed inputs invalidate it. No entries does not imply zero flows. A residual is change excluding reported contributions, not investment profit or a return rate.
 
-## 4. Security, privacy, and tradeoffs
+## Identity, Admin and operating boundaries
 
-- Network admission is the confirmed security boundary. Any admitted device can modify the dataset; application sessions do not provide user authorization. This limitation must appear in deployment guidance and acceptance checks.
-- Secrets remain in environment configuration; local files and backups need owner-only permissions. App-level database encryption and HTTPS termination on the LAN are not added deliverables. The owner can use disk encryption and network controls; reconsider the deployment if the LAN cannot be trusted.
-- Never log prompts, raw financial summaries, credentials, bot-token URLs, or report text. Record sanitized event IDs, error classes, and timestamps. Free-form notes are untrusted text; render safely and neutralize formula-like CSV values.
-- Use parameterized SQL and validated paths. Enforce foreign keys on each connection and retain audit history. Do not expose arbitrary SQL execution, shell operations, or AI tools through the dashboard.
-- SQLite keeps installation small and supplies atomic writes; its single-writer behavior requires short transactions and explicit contention handling. Multiple application users or network-shared storage would require a new design review.
-- Manual prices preserve simplicity and offline operation but may be stale. Warnings and partial subtotals are essential; advanced FX and market feeds remain future candidates.
-- A scheduled local command avoids dependence on Streamlit reruns, at the cost of host scheduler setup and imperfect external-delivery guarantees. A queue/broker or persistent cloud worker is unjustified here.
-- Financial policies and provider adapters remain separately testable. Dependency versions and live provider behavior must be checked during implementation; no current SDK compatibility is claimed by these design documents.
+Application Admin and User roles are distinct. Admin has membership/health permissions, no financial queries, financial admin-model registrations, arbitrary password setting, impersonation or email/role-change takeover. Reset initiation sends to the existing verified address; any membership/email/role lifecycle must preserve this boundary and prevent removing the last recoverable Admin. Personal finance use by an operator requires a separate User identity. Application Admin is not a Django superuser. Host/database operator capability is documented separately; do not promise protection against root/database access.
 
-Editable diagram sources are embedded above. They received source review only; no Mermaid renderer was installed. Approval points are DEC-009 through DEC-014 and OQ-002 through OQ-006.
+Financial ownership applies to services, ORM queries, FK relationships, exports, report URLs, caches, error details and background jobs. Global caches must include owner/source version. Use non-superuser runtime database credentials and separate migration/backup privileges. Optional PostgreSQL row security may be reviewed as defense in depth, but never replaces explicit service authorization or tests. The MVP does not require a multi-tenant platform.
+
+## Intended deployment: later implementation and verification
+
+```mermaid
+flowchart LR
+    Browser -->|"HTTPS"| Edge["Cloudflare edge"]
+    Edge -->|"Encrypted Tunnel"| Tunnel["cloudflared"]
+    subgraph Pi["Raspberry Pi 5 8 GB / CasaOS / Docker Compose"]
+        Tunnel --> App["Production Django server"]
+        Timer["Host timer / one management command"] --> Runner["Same application image"]
+        App --> DB[("Private PostgreSQL service / persistent volume")]
+        Runner --> DB
+        DB --> Backup["Protected operator backup destination"]
+    end
+    Runner -->|"Generic reminders"| SMTP["SMTP provider"]
+    App -->|"Later exact one-call consent"| Gemini["Gemini API"]
+```
+
+Compose manages a small app/database/tunnel stack; the scheduled command reuses the app image and database. CasaOS is the intended host management layer, not an application login or a user-facing dependency. Keep its management UI and Docker socket outside the public application route and out of the app container. Do not add a continuously running distributed worker or production self-hosted CI runner.
+
+Production uses a supported server, private database/service networking and persistent volumes; never Django's development server. No public database port or direct public origin; if a host port is needed for Tunnel it stays loopback. Configure allowed hosts, forwarded HTTPS trust, secure cookies and CSRF for the actual topology, and prevent Cloudflare/browser caching of private responses. Cloudflare sees application traffic in transit; it is not end-to-end secrecy from that provider. SMTP receives recipient/subject/generic content; no finance attachments or token-based report access.
+
+TASK-024 verifies Pi ARM64, Python/Django/driver/image, CasaOS/OS and Compose compatibility. TASK-020 performs separately authorized deployment/restart/recovery/rollback rehearsal; TASK-021 records observed instructions. No OS/image version, storage device, deployed service, certificate or working tunnel is claimed by these documents. CI has no production secrets or automatic deployment. A successful build never grants deployment authority.
+
+## Scheduled reporting, recovery and remaining gates
+
+Proposed operations at OQ-005: one periodic command considers latest due occurrence, uses unique keys for reminder/report independently, retries only definite bounded failures and surfaces ambiguous email sends. The report saves even if reminder failed or data is unchanged. Period-end wealth/flows use eligible dated observations; current goal/profile information is explicitly labeled as of generation unless historical versions exist. No invented historical state.
+
+Recovery is an operator operation, not an Admin/User database download. Produce consistent PostgreSQL backups, validate restore in a separate target, stop writers, keep a safety backup and roll back on failure. Restore invalidates sessions and pauses outbound work until reviewed reconciliation; an old database can otherwise restore live tokens or resend old reminders. Define protected off-device copy, cadence/retention, RPO/RTO and storage at OQ-006/008. Source-reviewed diagrams are not a claim of renderer or deployment validation.

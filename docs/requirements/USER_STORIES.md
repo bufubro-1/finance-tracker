@@ -1,187 +1,234 @@
 # Finance Tracker — User Stories
 
-Status: Planned; none implemented or accepted. Priority refers to the complete Charter release. See [SRS](SRS.md) for authoritative requirements and [RTM](RTM.md) for test coverage. Dependencies below are capability relationships; the backlog supplies execution order.
+Status: Revised scope approved; delivery is Planned except historical TASK-001 evidence. Must is relative to the assigned release. M-009 covers only synthetic startup/login/account/card portions; no whole broad story is accepted from that subset.
 
-## Milestone applicability
+## US-001 — Configure my reporting settings
 
-M-001A at 32 hours delivers opening-only portions of US-001/002/003/004/008/009/020: local startup, basic account/asset creation/listing, atomic openings, initial prices/totals, persistence, and essential recovery. Acceptance is M1A-01 through M1A-08 in the SRS, verified by the milestone test profile including TC-051/052. Purchases/sales, price corrections, CSV and other complete-story scenarios stay later. No whole story or requirement is marked accepted from a partial delivery; M-004 remains 92 hours.
+As a User, I want to use my own currency and timezone, so that my wealth stays comparable.
 
-## US-001 — Configure a local dataset and reporting currency
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-001, FR-002, FR-032.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Missing optional credentials do not block core startup; errors redact secrets; development and release settings are distinct.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to configure a local dataset and reporting currency, so that I can use the core without external accounts.**
+## US-002 — Manage my savings and investment accounts
 
-- **Priority:** Must
-- **Related functional requirements:** FR-001, FR-002, FR-032
-- **Acceptance criteria:** Given a fresh setup without API keys, when I choose a reporting currency and save a record, then it survives restart and core features work offline.
-- **Dependencies:** None
+As a User, I want to organize my accounts, so that I can see where wealth is held.
 
-## US-002 — Manage logical accounts
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-003.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Names are unique within an owner; history survives archive; archival changes comparison coverage and cannot manufacture savings.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to manage logical accounts, so that I can organize where my cash and investments are held.**
+## US-003 — Define holdings and units
 
-- **Priority:** Must
-- **Related functional requirements:** FR-003
-- **Acceptance criteria:** Given an unused account, when I rename or delete it, then the change succeeds; given a referenced account, deletion is refused with an archive explanation.
-- **Dependencies:** US-001
+As a User, I want to maintain asset definitions, so that quantities have an explicit meaning.
 
-## US-003 — Register my asset types and units
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-004.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Referenced units cannot be silently changed; instruments with history retain their identity; foreign holdings use manual reporting-currency prices.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to register my asset types and units, so that I can track cash, currencies, gold, stocks, and funds consistently.**
+## US-008 — Maintain dated prices
 
-- **Priority:** Must
-- **Related functional requirements:** FR-004
-- **Acceptance criteria:** Given an account, when I register each supported asset class, then its type and unit are retained and base cash remains valued at one.
-- **Dependencies:** US-002
+As a User, I want to enter manual prices, so that I control portfolio valuation inputs.
 
-## US-004 — Record manual holding purchases, sales, and openings
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-005.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Future, nonfinite or invalid prices fail; historical valuations never use a price effective after the valuation date.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to record manual holding purchases, sales, and openings, so that I can keep quantities and settlement cash consistent.**
+## US-009 — Understand current wealth
 
-- **Priority:** Must
-- **Related functional requirements:** FR-006
-- **Acceptance criteria:** Given cash 1000, when I buy an asset for 200 at a price valuing the acquired quantity at 200, then cash is 800, the asset is worth 200, and no expense is created.
-- **Dependencies:** US-003
+As a User, I want to see clear totals, composition and warnings, so that I understand both values and gaps.
 
-## US-005 — Record income and expenses
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-011, FR-012, FR-014, FR-050.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Unpriced holdings make totals incomplete; carrying a value forward does not refresh it; missing values never become assumed zero.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to record income and expenses, so that I can understand my monthly cash flow.**
+## US-011 — Review historical snapshots
 
-- **Priority:** Must
-- **Related functional requirements:** FR-007, FR-008
-- **Acceptance criteria:** Given cash 1000, when I record income 300 and expense 100, then cash is 1200 and the monthly figures contain those entries exactly once.
-- **Dependencies:** US-004
+As a User, I want to view saved dated wealth, so that I can compare recorded history.
 
-## US-006 — Correct or delete financial entries
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-015, FR-044.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. No current balance is backfilled into an earlier date; missing history remains missing; corrections may create a new snapshot revision, not overwrite an accepted snapshot.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to correct or delete financial entries, so that I can fix mistakes without losing the record history.**
+## US-012 — Maintain savings goals
 
-- **Priority:** Must
-- **Related functional requirements:** FR-009
-- **Acceptance criteria:** Given a posted expense 100, when I correct it to 80, then the effective expense is 80 and original/reversal/replacement history remains; repeating the deletion cannot double-refund cash.
-- **Dependencies:** US-005
+As a User, I want to set multiple targets and deadlines, so that I can track savings plans.
 
-## US-007 — Transfer cash between accounts
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-016.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Validate positive targets; allow overdue goals with a clear state; closing a goal releases its account links, not cash.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to transfer cash between accounts, so that I can move savings without inflating income or spending.**
+## US-014 — See indicative monthly saving
 
-- **Priority:** Must
-- **Related functional requirements:** FR-010
-- **Acceptance criteria:** Given two accounts, when I transfer 100, then one decreases and the other increases by 100 while total wealth and cash-flow totals stay unchanged.
-- **Dependencies:** US-004
+As a User, I want to see required monthly saving, so that I understand the remaining effort.
 
-## US-008 — Maintain dated manual prices
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-019.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Gap 1.00 over three opportunities rounds upward to 0.34 at scale 2; funded gives zero; overdue underfunded gives overdue, not division by zero; incomplete valuation qualifies the result.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to maintain dated manual prices, so that I can control the values used for my portfolio.**
+## US-015 — Request savings and wealth explanations
 
-- **Priority:** Must
-- **Related functional requirements:** FR-005
-- **Acceptance criteria:** Given a foreign-currency holding, when I enter a base-currency price, then it is stored with its effective date; a future or invalid price is rejected.
-- **Dependencies:** US-003
+As a User, I want to approve an optional explanation, so that I can understand computed summaries.
 
-## US-009 — See asset totals, composition, and valuation warnings
+- **Priority / release:** Must / Later Gemini.
+- **Requirements:** FR-020, FR-022, FR-024.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Explain reported contributions and unknown attribution honestly; estimates are not actual spending; Gemini cannot alter computed values.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to see asset totals, composition, and valuation warnings, so that I can understand my portfolio without hiding missing data.**
+## US-016 — Explain goal feasibility
 
-- **Priority:** Must
-- **Related functional requirements:** FR-011, FR-012, FR-014
-- **Acceptance criteria:** Given priced cash and an unpriced stock, when I open the dashboard, then I see a priced subtotal and an incomplete warning rather than an apparently complete net-worth figure.
-- **Dependencies:** US-004, US-008
+As a User, I want to approve a goal explanation, so that I can understand its assumptions.
 
-## US-010 — Review monthly income, expenses, and savings
+- **Priority / release:** Must / Later Gemini.
+- **Requirements:** FR-021, FR-024.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Context preserves stale/missing-data warnings and includes profile estimates only when approved; goals and balances remain unchanged.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to review monthly income, expenses, and savings, so that I can measure my saving behavior.**
+## US-017 — Ask explanatory questions
 
-- **Priority:** Must
-- **Related functional requirements:** FR-013
-- **Acceptance criteria:** Given income 300 and expenses 100, when I view the month, then savings are 200 and savings rate is 66.67%; transfers are excluded.
-- **Dependencies:** US-005, US-006, US-007
+As a User, I want to approve a minimized question, so that I control what leaves the application.
 
-## US-011 — Review historical financial trends
+- **Priority / release:** Must / Later Gemini.
+- **Requirements:** FR-023, FR-024.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Requests for specific security recommendations receive an explanation-only boundary; no SQL, payments, trades or writes can execute.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to review historical financial trends, so that I can compare periods using the data known for those dates.**
+## US-020 — Export my records and recover the system
 
-- **Priority:** Must
-- **Related functional requirements:** FR-015
-- **Acceptance criteria:** Given a price first effective this month, when I view last month, then that price is not applied backward; affected charts refresh after a correction.
-- **Dependencies:** US-008, US-010
+As a User / Operator, I want to export my own data or perform an operator restore, so that data stays portable and recoverable.
 
-## US-012 — Create and update several savings goals
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-029, FR-030, FR-031.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Operator procedure verifies a backup independently; ordinary Users and application Admin cannot download a whole-system backup.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to create and update several savings goals, so that I can plan separate targets and deadlines.**
+## US-021 — Link accounts to goals
 
-- **Priority:** Must
-- **Related functional requirements:** FR-016
-- **Acceptance criteria:** Given two different targets, when I save both, then both remain editable; deleting a funded goal requires confirming the reservation release.
-- **Dependencies:** US-001
+As a User, I want to link each account to one goal, so that progress does not promise the same assets twice.
 
-## US-013 — Reserve and release cash for goals and see progress
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-018, FR-048.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Each account supports at most one active goal; withdrawal or falling value can reduce progress; missing/stale values qualify progress.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to reserve and release cash for goals and see progress, so that I can avoid promising the same savings twice.**
+## US-022 — Invite members
 
-- **Priority:** Must
-- **Related functional requirements:** FR-017, FR-018
-- **Acceptance criteria:** Given cash 1000 with 700 reserved, when I try to reserve another 400 or spend 400, then the operation fails unchanged; reserving another 300 succeeds.
-- **Dependencies:** US-004, US-012
+As a Admin, I want to invite or suspend members, so that membership stays controlled.
 
-## US-014 — See required monthly contributions
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-033.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Invitation tokens expire, are single-use and are stored as hashes; no public registration; revoked or used invitations fail.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to see required monthly contributions, so that I can understand the remaining saving effort.**
+## US-023 — Sign in and recover access
 
-- **Priority:** Must
-- **Related functional requirements:** FR-019
-- **Acceptance criteria:** Given a gap of 900 and three remaining monthly opportunities, when I view the goal, then it shows 300 per month; an overdue unfinished goal shows overdue instead of division by zero.
-- **Dependencies:** US-013
+As a User, I want to use secure sign-in and recovery, so that my records remain private.
 
-## US-015 — Request an approved AI spending explanation or financial summary
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-034.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Prototype uses a locally provisioned synthetic identity; release verifies email ownership, generic reset responses, revocation and secure cookies; suspended users lose access.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to request an approved AI spending explanation or financial summary, so that I can understand the computed figures in plain language.**
+## US-024 — Administer without financial access
 
-- **Priority:** Must
-- **Related functional requirements:** FR-020, FR-022, FR-024
-- **Acceptance criteria:** Given a prepared summary, when I cancel its preview, then no Gemini request occurs; when I approve it, only the displayed minimized payload is sent and the result cannot update my records.
-- **Dependencies:** US-009, US-010
+As a Admin, I want to manage users and sanitized health with MFA, so that operations do not expose private finances.
 
-## US-016 — Request an AI explanation of goal feasibility
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-035, FR-045, FR-051.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. No impersonation, arbitrary password setting or financial model admin; reset can only be sent to the existing verified address; protected email/role changes cannot enable takeover.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to request an AI explanation of goal feasibility, so that I can understand my deterministic contribution target.**
+## US-025 — Keep my records isolated
 
-- **Priority:** Must
-- **Related functional requirements:** FR-021, FR-024
-- **Acceptance criteria:** Given a contribution target and sparse history, when I approve a feasibility question, then the response carries that limitation and cannot change the target or allocations.
-- **Dependencies:** US-014, US-015
+As a User, I want to have every financial path enforce ownership, so that others cannot read or change my data.
 
-## US-017 — Ask financial questions with explicit context approval
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-036.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. User A and Admin cannot access B through identifiers, forms, downloads or jobs; cross-owner relationships fail atomically; no client-supplied owner override.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to ask financial questions with explicit context approval, so that I can get explanations while controlling disclosure.**
+## US-026 — Update balances and holdings simply
 
-- **Priority:** Must
-- **Related functional requirements:** FR-023, FR-024
-- **Acceptance criteria:** Given an edited question, when I send it, then a fresh exact-context approval is required; an instruction to perform a transaction causes no financial write.
-- **Dependencies:** US-015
+As a User, I want to enter current observations, so that I need not record every financial transaction.
 
-## US-018 — Configure one authorized Telegram destination and report preferences
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-037, FR-049.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. An initial observation establishes starting wealth, not a contribution; validate exact nonnegative amounts; investment totals derive from cash and holdings, never an added duplicate account total.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to configure one authorized Telegram destination and report preferences, so that I can control where and when financial summaries leave my device.**
+## US-027 — Classify contributions and withdrawals
 
-- **Priority:** Must
-- **Related functional requirements:** FR-025, FR-028
-- **Acceptance criteria:** Given disabled notifications, when I validate a private destination and approve chosen report fields and schedule, then only that destination is eligible; group/mismatched destinations are refused.
-- **Dependencies:** US-001
+As a User, I want to annotate savings alongside updates, so that contributions are counted once.
 
-## US-019 — Receive scheduled summaries and goal reminders
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-038.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Save observations and annotations once atomically; contributions do not increase the entered balance again; internal tracked-account movements have zero net contribution; skipped classification is allowed.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to receive scheduled summaries and goal reminders, so that I can stay informed while the local runner is operating.**
+## US-028 — See honest change attribution
 
-- **Priority:** Must
-- **Related functional requirements:** FR-026, FR-027
-- **Acceptance criteria:** Given an enabled due report, when the runner is invoked twice after acknowledged delivery, then only one message is sent; after downtime only the latest due occurrence is considered.
-- **Dependencies:** US-010, US-014, US-018
+As a User, I want to see unknown when the data is insufficient, so that I am not shown invented performance.
 
-## US-020 — Back up, restore, and export my records
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-039.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Without comparable endpoints and explicit interval-completeness confirmation, show attribution unknown; 10000 to 11200 with complete net contributions 1000 gives residual 200, never an automatic return percentage or investment-profit claim.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
 
-**As a Personal User, I want to back up, restore, and export my records, so that I can retain control and recover from local data loss.**
+## US-029 — Maintain an optional profile
 
-- **Priority:** Must
-- **Related functional requirements:** FR-029, FR-030, FR-031
-- **Acceptance criteria:** Given a valid backup, when I restore it with writers stopped, then balances and goals match; given a corrupt backup, live data is unchanged; CSV exports preserve documented values without credentials.
-- **Dependencies:** US-006, US-013
+As a User, I want to review estimated income and expenses, so that planning assumptions stay explicit.
+
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-040, FR-050.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Omitting the profile does not block tracking or reports; estimated surplus is labeled; profile values never create balances or movements.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
+
+## US-030 — Configure reports and reminders
+
+As a User, I want to choose a monthly schedule, so that I can review information before generation.
+
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-041, FR-042.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Schedules require explicit enablement; schedule edits affect future occurrences and do not overwrite earlier reports; local month boundaries are used.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
+
+## US-031 — Read private monthly reports
+
+As a User, I want to view saved authenticated reports, so that I can review prior periods even with stale data.
+
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-043, FR-044, FR-050.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. Show missing/stale inputs and profile review dates; report reads require owner authentication; regeneration creates a new revision and no automatic Gemini call.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
+
+## US-032 — Operate a controlled release
+
+As a Operator, I want to use verified CI and deployment procedures, so that the small self-hosted system remains maintainable.
+
+- **Priority / release:** Must / MVP.
+- **Requirements:** FR-046, FR-047.
+- **Acceptance:** Given the specified owned/synthetic workspace, the linked requirements pass their stated success and rejection scenarios. CI uses no production data or deployment credentials, tests PostgreSQL behavior when introduced, and does not auto-deploy.
+- **Dependencies:** Authentication/owned settings as applicable; task DAG in [Backlog](../planning/BACKLOG.md). No deferred ledger/reservation prerequisites.
+
+## Historical stories
+
+Retained identifiers; original acceptance at baseline `5052b5b`.
+
+| ID | Original concept | Status / replacement |
+|---|---|---|
+| US-004 | Record purchases, sales and openings | Deferred; current value comes from US-021/026/027/028/030/031 as applicable. |
+| US-005 | Record income and expenses | Deferred; current value comes from US-021/026/027/028/030/031 as applicable. |
+| US-006 | Correct or delete ledger entries | Deferred; current value comes from US-021/026/027/028/030/031 as applicable. |
+| US-007 | Transfer cash through ledger postings | Deferred; current value comes from US-021/026/027/028/030/031 as applicable. |
+| US-010 | Review actual monthly income/expenses/savings | Deferred; current value comes from US-021/026/027/028/030/031 as applicable. |
+| US-013 | Reserve and release goal cash | Deferred; current value comes from US-021/026/027/028/030/031 as applicable. |
+| US-018 | Configure Telegram destination | Deferred; current value comes from US-021/026/027/028/030/031 as applicable. |
+| US-019 | Receive Telegram summaries and goal reminders | Deferred; current value comes from US-021/026/027/028/030/031 as applicable. |

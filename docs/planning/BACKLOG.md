@@ -1,364 +1,355 @@
 # Finance Tracker — Development Backlog
 
-Status: Development work is **Not Started**. DEC-015 records the owner-approved M-001A milestone and reallocation; other proposed technical decisions retain their existing status. Focused verification and usage notes are included in task estimates. No application work has been performed.
+Status: Owner-approved remaining development planning baseline (DEC-025); revised task specifications pending human review. TASK-001 alone is Completed — Accepted and Integrated. Every other MVP/later leaf is Not Started; retired ledger/Telegram leaves are Deferred or Superseded, never completed. This documentation request has no task ID and does not start the next application task.
 
-## Estimate accounting and execution order
+## Baseline and prototype allocation
 
-The 21 original task IDs are retained. TASK-004, TASK-005, TASK-007, and TASK-008 are **non-additive rollups**, each completed only when both A/B children are done. There are 25 executable leaf tasks and four rollups. Schedule/count leaf estimates only; never add a rollup to its children. A rollup's dependencies express completion, not a gate inherited by its early child.
+Count remaining executable MVP leaves only: **264 hours**, including **16 hours** for M-009. TASK-001's historical four-hour estimate is excluded from remaining effort and is not an actual-time claim. Later Gemini TASK-014/015 total 24 hours outside the MVP. Deferred tasks/future candidates and all rollups contribute zero additional hours.
 
-| Rollup | Original budget | Early A portion | Remaining B portion |
-|---|---:|---:|---:|
-| TASK-004 | 8 h | TASK-004A: 4 h | TASK-004B: 4 h |
-| TASK-005 | 12 h | TASK-005A: 4 h | TASK-005B: 8 h |
-| TASK-007 | 4 h | TASK-007A: 2 h | TASK-007B: 2 h |
-| TASK-008 | 8 h | TASK-008A: 6 h | TASK-008B: 2 h |
+| Package | Early prototype | Remaining portion | Total |
+|---|---|---|---|
+| Django foundation TASK-022 plus CI TASK-023 and compatibility TASK-024 | TASK-022A: 8 h | TASK-022B: 8 h; TASK-023: 6 h; TASK-024: 6 h | 28 h |
+| Identity TASK-025 plus roles TASK-026 and MFA TASK-027 | TASK-025A: 4 h | TASK-025B: 16 h; TASK-026: 16 h; TASK-027: 12 h | 48 h |
+| Rules, accounts, movements, valuation and history | TASK-004A1: 4 h | TASK-004A2: 2 h; TASK-004B: 4 h; TASK-002: 6 h; TASK-028: 6 h; TASK-008A/B: 6/2 h; TASK-010: 6 h | 36 h |
 
-Execute TASK-001 → TASK-002 → TASK-003 → TASK-004A → TASK-005A → TASK-008A → TASK-007A for M-001A (32 cumulative hours). Then TASK-004B → TASK-005B → TASK-006 → TASK-007B completes M-002 at 54 hours; TASK-008B → TASK-009 → TASK-010 completes M-003 at 68 hours; TASK-011–TASK-013 preserves M-004 at 92 hours. TASK-014–TASK-021 retain the remaining 60 hours; total 152 hours.
+The first three executable leaves are TASK-022A -> TASK-025A -> TASK-004A1. Full infrastructure, PostgreSQL hardening, CI, invitations and Admin MFA are not prerequisites to that local synthetic demonstration. Initial exact cash parsing belongs to that form; complete monetary policy remains TASK-002. Full real-user/sensitive-data admission still waits for M-007.
 
-Prerequisites: choose the supported runtime for TASK-001; review financial precision, history, asset-unit edit restrictions, and replay-guard design before TASK-002/003/005A (OQ-002/004/007). M-001A approval does not silently approve unresolved technical policies.
-
-## Core work and first-dashboard portions
-
-M-001A is a narrower first working dashboard. M-004 remains the first usable **complete core**, including goals, full tracking/reporting and applicable security/recovery evidence. Parent acceptance criteria below retain the original full scope; only the A portions plus TASK-001–003 are required at M-001A.
+## Completed historical task
 
 ### TASK-001 — Runtime skeleton and local configuration
 
-- **Type:** Executable leaf
-- **Description:** Build the WBS 1.1 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** None
-- **Related requirements:** FR-001, FR-002, FR-032; NFR-001, NFR-002, NFR-006, NFR-009
-- **Acceptance criteria:** A minimal documented Python project loads validated configuration, keeps adapters off, requires initial currency, and provides loopback-first startup and trusted-device firewall guidance; no real secrets are tracked.
-- **Estimated effort:** 4 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-002 — Exact monetary and date rules
-
-- **Type:** Executable leaf
-- **Description:** Build the WBS 1.2 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-001
-- **Related requirements:** FR-002, FR-012, FR-013, FR-019; NFR-006, NFR-012
-- **Acceptance criteria:** Pure decimal/date functions implement BR-001 through BR-012 as applicable, with boundary fixtures for rounding, unavailable savings rate, and overdue goals.
-- **Estimated effort:** 4 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-003 — SQLite schema and repositories
-
-- **Type:** Executable leaf
-- **Description:** Build the WBS 1.3 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-001, TASK-002
-- **Related requirements:** FR-003, FR-004, FR-006, FR-009, FR-017, FR-032; NFR-002, NFR-005, NFR-006, NFR-008
-- **Acceptance criteria:** The reviewed data model becomes a versioned local schema with per-connection foreign keys, atomic unit-of-work behavior, temporary-database persistence tests, and no sensitive fixture data. The reviewed opening-command replay guard is included in schema/repository tests before TASK-005A; exact mechanism remains a proposed technical decision (DEC-016).
-- **Estimated effort:** 8 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-004 — Account and asset workflows
-
-- **Type:** Rollup — do not count or schedule separately
-- **Description:** Build the WBS 2.1 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-004A, TASK-004B
-- **Related requirements:** FR-003, FR-004; NFR-004
-- **Acceptance criteria:** The UI supports all specified asset types and account/asset CRUD/archive rules; referenced-delete protection and field validation pass their planned checks.
-- **Estimated effort:** 8 hours rollup only; included in the children, not additional.
-- **Status:** Not Started
-
-### TASK-004A — Basic account, asset registration, and listing
-
-- **Type:** Executable leaf
-- **Description:** Deliver WBS 2.1.1 as an existing-budget portion; include its focused tests and usage notes.
-- **Priority:** Must
-- **Dependencies:** TASK-003
-- **Related requirements:** FR-003, FR-004; NFR-004
-- **Acceptance criteria:** A localhost Streamlit form creates/selects a basic account, validates cash/currency/gold/stock/fund registration fields, and produces a normalized opening intent for the shared service contract. An asset-list view reads committed repository holdings with units and clear outcomes. This leaf prepares the form/read path; TASK-005A connects atomic financial persistence. It does not save a new definition separately before an opening or directly update balances. Valid form input survives errors.
-- **Estimated effort:** 4 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-004B — Remaining account and asset management
-
-- **Type:** Executable leaf
-- **Description:** Deliver WBS 2.1.2 as an existing-budget portion; include its focused tests and usage notes.
-- **Priority:** Must
-- **Dependencies:** TASK-004A
-- **Related requirements:** FR-003, FR-004; NFR-004
-- **Acceptance criteria:** Complete rename/edit/archive/delete workflows and referenced-record safeguards, applying the reviewed unit-immutability policy. All original account/asset acceptance criteria pass; existing openings and historical prices are not reinterpreted.
-- **Estimated effort:** 4 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-005 — Financial ledger workflows
-
-- **Type:** Rollup — do not count or schedule separately
-- **Description:** Build the WBS 2.2 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-005A, TASK-005B
-- **Related requirements:** FR-006, FR-007, FR-008, FR-032; NFR-005, NFR-008
-- **Acceptance criteria:** Openings, purchases, sales, income, expenses, and explained adjustments create correct atomic postings; restart and validation fixtures pass.
-- **Estimated effort:** 12 hours rollup only; included in the children, not additional.
-- **Status:** Not Started
-
-### TASK-005A — Atomic opening transactions and replay protection
-
-- **Type:** Executable leaf
-- **Description:** Deliver WBS 2.2.1 as an existing-budget portion; include its focused tests and usage notes.
-- **Priority:** Must
-- **Dependencies:** TASK-004A
-- **Related requirements:** FR-006, FR-032; NFR-005, NFR-008
-- **Acceptance criteria:** One validated registration commits the new asset definition, opening transaction/posting, and optional initial price in one unit of work. Holdings derive from postings; openings are excluded from income/expenses. Invalid or failed writes leave no orphan or partial record. Retried submissions/reruns cannot create duplicate openings, including after restart; a conflicting reuse is rejected. TC-040, TC-043 and TC-051 applicable checks pass.
-- **Estimated effort:** 4 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-005B — Remaining income, expense, and trading ledger
-
-- **Type:** Executable leaf
-- **Description:** Deliver WBS 2.2.2 as an existing-budget portion; include its focused tests and usage notes.
-- **Priority:** Must
-- **Dependencies:** TASK-005A, TASK-004
-- **Related requirements:** FR-006, FR-007, FR-008, FR-032; NFR-005, NFR-008
-- **Acceptance criteria:** Add manual purchases/sales, income, expenses, and explained adjustments using the same validated posting model. Preserve opening replay protection and atomicity, reject invalid/negative holdings, and run the original ledger regression cases.
-- **Estimated effort:** 8 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-006 — Corrections and transfers
-
-- **Type:** Executable leaf
-- **Description:** Build the WBS 2.3 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-005
-- **Related requirements:** FR-009, FR-010; NFR-005, NFR-008
-- **Acceptance criteria:** Linked reversal/replacement and transfer workflows preserve history, respect historical holdings/current reservations, and never affect income/expense incorrectly.
-- **Estimated effort:** 8 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-007 — Backup, restore, and CSV
-
-- **Type:** Rollup — do not count or schedule separately
-- **Description:** Build the WBS 2.4 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-007A, TASK-007B
-- **Related requirements:** FR-029, FR-030, FR-031; NFR-011
-- **Acceptance criteria:** A valid round trip passes with stopped writers; corrupt input preserves live data; consistent backup and safe CSV export are documented and checked.
-- **Estimated effort:** 4 hours rollup only; included in the children, not additional.
-- **Status:** Not Started
-
-### TASK-007A — Essential first-dashboard backup and restore
-
-- **Type:** Executable leaf
-- **Description:** Deliver WBS 2.4.1 as an existing-budget portion; include its focused tests and usage notes.
-- **Priority:** Must
-- **Dependencies:** TASK-003, TASK-005A
-- **Related requirements:** FR-029, FR-030; NFR-011
-- **Acceptance criteria:** Before personal data is used, create a consistent SQLite backup and provide a documented stopped-writer restore with schema/integrity/business validation, explicit replacement confirmation, a safety backup, and rollback/reopen checks. A small opening/price fixture round-trips, and corrupt/incompatible candidates leave live data unchanged. Core safety checks are not deferred to TASK-007B.
-- **Estimated effort:** 2 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-007B — CSV export and remaining recovery verification
-
-- **Type:** Executable leaf
-- **Description:** Deliver WBS 2.4.2 as an existing-budget portion; include its focused tests and usage notes.
-- **Priority:** Must
-- **Dependencies:** TASK-007A, TASK-006
-- **Related requirements:** FR-029, FR-030, FR-031; NFR-011
-- **Acceptance criteria:** Add the documented safe CSV export and remaining recovery coverage for the expanded ledger. Repeat essential round-trip/invalid-restore checks and exercise backup during writes; later goal-related acceptance remains part of M-004 and final release verification.
-- **Estimated effort:** 2 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-008 — Manual prices and valuation
-
-- **Type:** Rollup — do not count or schedule separately
-- **Description:** Build the WBS 3.1 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-008A, TASK-008B
-- **Related requirements:** FR-005, FR-011, FR-012; NFR-007, NFR-012
-- **Acceptance criteria:** Dated manual prices, per-holding rounding, partial valuation, stale warnings, and asset-only labels pass deterministic fixtures.
-- **Estimated effort:** 8 hours rollup only; included in the children, not additional.
-- **Status:** Not Started
-
-### TASK-008A — Initial manual prices and first dashboard valuation
-
-- **Type:** Executable leaf
-- **Description:** Deliver WBS 3.1.1 as an existing-budget portion; include its focused tests and usage notes.
-- **Priority:** Must
-- **Dependencies:** TASK-003, TASK-004A, TASK-005A
-- **Related requirements:** FR-005, FR-011, FR-012; NFR-007, NFR-012
-- **Acceptance criteria:** Enter dated initial reporting-currency prices, keep base cash valued at one, and display per-holding values plus the exact total/asset-only estimate. Show price dates, configurable stale warnings, unpriced holdings and incomplete subtotals, and an empty state. Cash 1000 plus 10 units at 20 totals 1200. Use exact arithmetic and agreed rounding; no income/expense/distribution charts are required yet.
-- **Estimated effort:** 6 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-008B — Price corrections and valuation completion
-
-- **Type:** Executable leaf
-- **Description:** Deliver WBS 3.1.2 as an existing-budget portion; include its focused tests and usage notes.
-- **Priority:** Must
-- **Dependencies:** TASK-008A, TASK-006
-- **Related requirements:** FR-005, FR-011, FR-012; NFR-007, NFR-012
-- **Acceptance criteria:** Complete auditable price corrections and validate totals after reversals, transfers, and the expanded ledger. Meet all original valuation criteria and applicable performance checks without changing accepted rounding or completeness semantics.
-- **Estimated effort:** 2 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-009 — Monthly dashboard and distribution
-
-- **Type:** Executable leaf
-- **Description:** Build the WBS 3.2 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-008
-- **Related requirements:** FR-013, FR-014; NFR-004, NFR-007
-- **Acceptance criteria:** Plotly/Pandas presentation uses authoritative service results, consistent distribution totals, clear empty states, and correct monthly savings.
-- **Estimated effort:** 8 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-010 — Historical reporting
-
-- **Type:** Executable leaf
-- **Description:** Build the WBS 3.3 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-009
-- **Related requirements:** FR-015
-- **Acceptance criteria:** Historical reports use effective transactions and dated prices, expose gaps, and recalculate after corrections without applying future prices backward.
-- **Estimated effort:** 4 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-011 — Savings goal workflows
-
-- **Type:** Executable leaf
-- **Description:** Build the WBS 4.1 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-009
-- **Related requirements:** FR-016
-- **Acceptance criteria:** Multiple goals support valid target/date editing and confirmed reservation release on closure; invalid targets and overdue states are covered.
-- **Estimated effort:** 4 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-012 — Atomic cash reservations
-
-- **Type:** Executable leaf
-- **Description:** Build the WBS 4.2 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-011, TASK-006
-- **Related requirements:** FR-017, FR-018; NFR-005, NFR-007, NFR-008
-- **Acceptance criteria:** Allocations, releases, cash debits, and corrections share the reservation invariant; competing-write fixtures cannot over-allocate; progress never increases total assets.
-- **Estimated effort:** 12 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-013 — Contribution projections and goal views
-
-- **Type:** Executable leaf
-- **Description:** Build the WBS 4.3 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-012
-- **Related requirements:** FR-019; NFR-004, NFR-012
-- **Acceptance criteria:** Monthly opportunity counting, upward-rounded contributions, deadline-today, overdue, excess-funded, and zero-gap views match the documented rules.
-- **Estimated effort:** 8 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-## Complete Charter release — remaining phases 5–7
-
-Gemini and Telegram are optional to enable but remain required complete-release deliverables.
-
-### TASK-014 — Gemini boundary and consent
-
-- **Type:** Executable leaf
-- **Description:** Build the WBS 5.1 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-009
-- **Related requirements:** FR-024; NFR-002, NFR-003, NFR-006, NFR-010
-- **Acceptance criteria:** An environment-configured adapter accepts only immutable per-request approved payloads, redacts errors, uses a bounded timeout, and is replaced by fakes in automated tests.
-- **Estimated effort:** 8 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-015 — AI explanation workflows
-
-- **Type:** Executable leaf
-- **Description:** Build the WBS 5.2 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-014, TASK-013
-- **Related requirements:** FR-020, FR-021, FR-022, FR-023; NFR-003, NFR-010
-- **Acceptance criteria:** Spending, summary, goal feasibility, and question workflows label AI output, disclose partial context, and have no path to financial writes; failures preserve core availability.
-- **Estimated effort:** 8 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-016 — Telegram recipient and preferences
-
-- **Type:** Executable leaf
-- **Description:** Build the WBS 6.1 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-001
-- **Related requirements:** FR-025, FR-028; NFR-002, NFR-003, NFR-006
-- **Acceptance criteria:** One validated private destination, non-financial connection test, report-field consent, timezone, and disabled-by-default schedules are configurable; no inbound commands are handled.
-- **Estimated effort:** 6 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-017 — Scheduled summary runner
-
-- **Type:** Executable leaf
-- **Description:** Build the WBS 6.2 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-016, TASK-009, TASK-007
-- **Related requirements:** FR-026; NFR-003, NFR-010
-- **Acceptance criteria:** A local scheduled command claims unique due occurrences, checks the allowlist, delivers deterministic summaries, and handles downtime, retries, ambiguity, and duplicate invocation.
-- **Estimated effort:** 10 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-018 — Goal notifications
-
-- **Type:** Executable leaf
-- **Description:** Build the WBS 6.3 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-017, TASK-013
-- **Related requirements:** FR-027; NFR-010
-- **Acceptance criteria:** Enabled reminders/progress updates use current deterministic goal data and unique occurrence keys; deleted goals and disabled rules do not send.
-- **Estimated effort:** 4 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-019 — System and acceptance verification
-
-- **Type:** Executable leaf
-- **Description:** Build the WBS 7.1 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-007, TASK-010, TASK-013, TASK-015, TASK-018
-- **Related requirements:** FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013, FR-014, FR-015, FR-016, FR-017, FR-018, FR-019, FR-020, FR-021, FR-022, FR-023, FR-024, FR-025, FR-026, FR-027, FR-028, FR-029, FR-030, FR-031, FR-032; NFR-004, NFR-007
-- **Acceptance criteria:** Execute the planned release tests on synthetic data, resolve Must failures, record actual results, and run the owner acceptance scenarios with external calls opt-in.
-- **Estimated effort:** 10 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-020 — Deployment and recovery rehearsal
-
-- **Type:** Executable leaf
-- **Description:** Build the WBS 7.2 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-019
-- **Related requirements:** FR-001, FR-025, FR-029, FR-030, FR-032; NFR-001, NFR-002, NFR-009, NFR-011
-- **Acceptance criteria:** A clean supported local setup, trusted/denied-device checks, offline restart, and timed restore rehearsal produce evidence; warnings and residual limitations are documented.
-- **Estimated effort:** 6 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-### TASK-021 — Usage documentation and local release
-
-- **Type:** Executable leaf
-- **Description:** Build the WBS 7.3 deliverable using the proposed architecture and the linked requirements; include the focused verification needed to demonstrate the behavior.
-- **Priority:** Must
-- **Dependencies:** TASK-020
-- **Related requirements:** FR-001, FR-002, FR-025, FR-028, FR-029, FR-030, FR-031, FR-032; NFR-009, NFR-011
-- **Acceptance criteria:** Installation, configuration examples, workflows, scheduling, limitations, backup/recovery, and release notes match observed behavior; no credentials/data enter Git; owner reviews the local release.
-- **Estimated effort:** 8 hours, preliminary; includes focused tests and notes.
-- **Status:** Not Started
-
-## Optional future enhancements — outside release estimates
-
-These are Charter §13 candidates, not approved requirements or hidden prerequisites. Each needs owner selection and new requirements/tests before implementation. No estimate is included in the 152-hour baseline.
-
-| Task ID | Title / description | Priority | Dependencies | Related requirements | Acceptance criteria for future selection | Effort | Status |
-|---|---|---|---|---|---|---|---|
-| FUT-001 | Evaluate automatic market prices and rate-provider costs | Could | TASK-021; owner scope decision | None; future Charter §13 | Define supported sources, freshness/fallback rules, privacy, licensing, and approved requirements before building. | Not estimated | Not Started |
-| FUT-002 | Evaluate multi-currency analysis | Could | TASK-021; owner scope decision | None; future Charter §13 | Specify FX history, conversion semantics, migration, and approved acceptance examples. | Not estimated | Not Started |
-| FUT-003 | Evaluate inflation-adjusted and advanced portfolio analytics | Could | TASK-021; owner scope decision | None; future Charter §13 | Select metrics and data sources and approve deterministic calculation examples. | Not estimated | Not Started |
-| FUT-004 | Evaluate recurring entries and AI categorization | Could | TASK-021; owner scope decision | None; future Charter §13 | Define duplicate-prevention and human-approval boundaries before authorizing writes. | Not estimated | Not Started |
-| FUT-005 | Evaluate forecasting and scenarios | Could | TASK-021; owner scope decision | None; future Charter §13 | Define assumptions, uncertainty labels, and nonauthoritative forecast outputs. | Not estimated | Not Started |
-| FUT-006 | Improve responsive dashboard layouts | Should | TASK-021; owner scope decision | None; future Charter §13 | Agree target viewport sizes and usability criteria; retain core calculation semantics. | Not estimated | Not Started |
-
-## Next development task and maintenance
-
-TASK-001 is the first executable development task after the owner reviews the planning baseline. It establishes configuration and safe startup; TASK-002 then fixes money/date rules before schema and ledger implementation. This documentation assignment does not begin either task.
-
-Re-estimate after M-001, M-001A, and M-004. Preserve approved targets unless the owner explicitly revises them; do not trim financial safeguards to meet a timebox. Change a status only with evidence; dependencies are not a reason to label every future task Blocked. Later execution may use In Progress, Blocked, or Completed, but none is asserted here. Major scope changes require a decision record and traceability updates first.
+- **Status:** Completed — Accepted and Integrated, limited historical scope.
+- **Priority / historical estimate:** Must / 4 h, not an actual-effort claim; excluded from the 264 h remaining.
+- **Dependencies:** None.
+- **Requirements (historical wording):** FR-001, FR-002, FR-032; NFR-001, NFR-002, NFR-006, NFR-009, scoped setup portions only.
+- **Acceptance/evidence:** Commit `5052b5b` integrates accepted source `475492a`; its record states 58 pytest passes and successful pip check on Linux x86_64/Python 3.14.8. Not rerun in this documentation change. Existing package/configuration/Streamlit shell remains unchanged; no Django/financial/Pi acceptance is inferred.
+- **Validation limitations:** Fresh host, physical LAN checks and new browser acceptance were not run for that integration. Replacing the shell is separate authorized work; do not reopen TASK-001 or count it twice.
+
+## Remaining MVP executable leaves
+
+### TASK-022A — Prototype Django shell and dashboard
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 1.4.1 / 8 h, focused tests and notes included.
+- **Dependencies:** TASK-001.
+- **Related requirements:** FR-001, FR-032, NFR-001, NFR-004; applicable tests in RTM.
+- **Acceptance criteria:** Local Django package, final user-model foundation, Dashboard/Accounts navigation, clean template layout, readable account cards and synthetic-data banner work on loopback. No SPA/frontend framework or deployment. Include startup and navigation checks.
+- **Decision gates:** None.
+
+### TASK-025A — Prototype standard Django authentication
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 1.7.1 / 4 h, focused tests and notes included.
+- **Dependencies:** TASK-022A.
+- **Related requirements:** FR-034; applicable tests in RTM.
+- **Acceptance criteria:** Locally provisioned synthetic identity can log in/out using Django hashing, sessions and CSRF; protected pages reject anonymous access. No public signup, invitation emails or claim of production security.
+- **Decision gates:** None.
+
+### TASK-004A1 — Prototype account creation and balances
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 2.1.1.1 / 4 h, focused tests and notes included.
+- **Dependencies:** TASK-025A.
+- **Related requirements:** FR-003, FR-037, NFR-004, NFR-012 (prototype input subset only), TC-039, TC-053; applicable tests in RTM.
+- **Acceptance criteria:** An intuitive form creates an owned savings account with exact nonnegative synthetic opening balance and clear currency; cards show the saved balance and total. Valid input survives errors; empty state explains next action. Refresh/restart retains records; owner demonstrates the complete path.
+- **Decision gates:** None.
+
+### TASK-022B — Complete Django configuration and boundaries
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 1.4.2 / 8 h, focused tests and notes included.
+- **Dependencies:** TASK-004A1.
+- **Related requirements:** FR-001, NFR-002, NFR-006; applicable tests in RTM.
+- **Acceptance criteria:** Complete separate development/release settings, private secrets handling, redacted configuration errors and service boundaries; retain working prototype UI. No infrastructure deployment.
+- **Decision gates:** None.
+
+### TASK-023 — GitHub Actions CI
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 1.5 / 6 h, focused tests and notes included.
+- **Dependencies:** TASK-022B.
+- **Related requirements:** FR-046; applicable tests in RTM.
+- **Acceptance criteria:** Reviewed CI runs applicable synthetic checks without production secrets; add PostgreSQL integration coverage as persistence is introduced. No automatic deployment.
+- **Decision gates:** None.
+
+### TASK-024 — Pi and deployment compatibility assessment
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 1.6 / 6 h, focused tests and notes included.
+- **Dependencies:** TASK-022B.
+- **Related requirements:** FR-047, NFR-007, NFR-009; applicable tests in RTM.
+- **Acceptance criteria:** Check intended Pi 5 8 GB/CasaOS/Docker Compose/Cloudflare environment, ARM64 Python/dependency/image compatibility and storage assumptions using synthetic data. Record unsupported combinations; no silently selected OS/image versions or deployment.
+- **Decision gates:** OQ-004, OQ-008.
+
+### TASK-025B — Invite-only release authentication
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 1.7.2 / 16 h, focused tests and notes included.
+- **Dependencies:** TASK-025A, TASK-022B.
+- **Related requirements:** FR-033, FR-034, NFR-013; applicable tests in RTM.
+- **Acceptance criteria:** Extend existing Django identity model to email/password membership, expiring hashed single-use invitations, verified-email reset, throttling, suspension/session revocation and secure-cookie/CSRF tests. Synthetic tests only.
+- **Decision gates:** OQ-010.
+
+### TASK-026 — Roles, ownership policy and private health
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 1.8 / 16 h, focused tests and notes included.
+- **Dependencies:** TASK-025B.
+- **Related requirements:** FR-035, FR-036, FR-045, NFR-001, NFR-013; applicable tests in RTM.
+- **Acceptance criteria:** Admin/User access matrix, deny-by-default service guards and sanitized health views pass synthetic checks. No financial admin models, impersonation, arbitrary password changes or takeover through email/role edits. Financial-path isolation is completed by TASK-003 and verified by TASK-019.
+- **Decision gates:** OQ-010.
+
+### TASK-027 — Required Admin MFA
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 1.9 / 12 h, focused tests and notes included.
+- **Dependencies:** TASK-026.
+- **Related requirements:** FR-051, NFR-013; applicable tests in RTM.
+- **Acceptance criteria:** Admin enrollment/challenge/recovery and session invalidation work; no Admin operations before MFA; lost-factor process does not grant financial access.
+- **Decision gates:** OQ-010.
+
+### TASK-002 — Exact wealth, savings and date rules
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 1.2 / 6 h, focused tests and notes included.
+- **Dependencies:** TASK-001.
+- **Related requirements:** FR-002, FR-012, FR-019, NFR-006, NFR-012; applicable tests in RTM.
+- **Acceptance criteria:** Pure exact rules cover observation valuation, net contributions, unknown attribution, per-user dates and indicative goal contributions. Reject excess precision/nonfinite/overflow; no expense/trade/reservation engine.
+- **Decision gates:** OQ-002.
+
+### TASK-003 — PostgreSQL observations and ownership
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 1.3 / 20 h, focused tests and notes included.
+- **Dependencies:** TASK-002, TASK-022B, TASK-026.
+- **Related requirements:** FR-002, FR-032, FR-036, NFR-002, NFR-005, NFR-008, NFR-012; applicable tests in RTM.
+- **Acceptance criteria:** Versioned PostgreSQL schema/repositories enforce owner relationships, atomic update batches, durable replay/version checks and exact persistence. Test actual PostgreSQL constraints/concurrency; disposable prototype data needs no migration.
+- **Decision gates:** OQ-002, OQ-007.
+
+### TASK-004A2 — Complete balance and holding observations
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 2.1.1.2 / 2 h, focused tests and notes included.
+- **Dependencies:** TASK-004A1, TASK-003.
+- **Related requirements:** FR-003, FR-004, FR-032, FR-037, FR-049, NFR-005; applicable tests in RTM.
+- **Acceptance criteria:** Extend the existing form/model path to full account holdings and dated observations; exact validation, atomicity, conflict detection and replay service tests use the shared PostgreSQL foundation. Preserve the prototype workflow.
+- **Decision gates:** OQ-002, OQ-007.
+
+### TASK-004B — Account lifecycle and observation revision
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 2.1.2 / 4 h, focused tests and notes included.
+- **Dependencies:** TASK-004A2.
+- **Related requirements:** FR-003, FR-004, FR-049; applicable tests in RTM.
+- **Acceptance criteria:** Rename/archive and owned asset definitions preserve history; revision reasons and superseded observations remain available; referenced unit changes cannot reinterpret history.
+- **Decision gates:** OQ-002.
+
+### TASK-008A — Manual prices and current wealth
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 3.1.1 / 6 h, focused tests and notes included.
+- **Dependencies:** TASK-004B, TASK-002.
+- **Related requirements:** FR-005, FR-011, FR-012, FR-050, NFR-012; applicable tests in RTM.
+- **Acceptance criteria:** Dated prices, cash/holding totals and warnings work in the shared dashboard; missing values are incomplete, not zero; no independently added investment-account total.
+- **Decision gates:** OQ-003.
+
+### TASK-007A — Essential PostgreSQL backup and restore
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 2.4.1 / 10 h, focused tests and notes included.
+- **Dependencies:** TASK-003, TASK-008A.
+- **Related requirements:** FR-029, FR-030, NFR-011; applicable tests in RTM.
+- **Acceptance criteria:** Synthetic round-trip preserves ownership, observations and exact figures; invalid candidate leaves live data intact; verify safety backup, stopped writers, rollback, session invalidation and paused jobs. No personal data admitted yet.
+- **Decision gates:** OQ-006.
+
+### TASK-028 — Classified savings updates
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 2.5 / 6 h, focused tests and notes included.
+- **Dependencies:** TASK-004A2, TASK-002.
+- **Related requirements:** FR-038, FR-039, NFR-005, NFR-008; applicable tests in RTM.
+- **Acceptance criteria:** Optional dated contributions/withdrawals/internal movement annotations save with observations once. Starting wealth is excluded; no double addition. Incomplete intervals or changed coverage give unknown attribution; matching replay is idempotent and conflicting key reuse fails.
+- **Decision gates:** OQ-007.
+
+### TASK-008B — Valuation revisions and distribution
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 3.1.2 / 2 h, focused tests and notes included.
+- **Dependencies:** TASK-008A, TASK-028.
+- **Related requirements:** FR-005, FR-011, FR-012, FR-014, FR-049; applicable tests in RTM.
+- **Acceptance criteria:** Complete owned price revisions and composition views; per-holding rounded values sum exactly and warnings persist; reuse shared revision/persistence behavior.
+- **Decision gates:** None.
+
+### TASK-010 — Historical wealth snapshots
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 3.3 / 6 h, focused tests and notes included.
+- **Dependencies:** TASK-008B, TASK-028.
+- **Related requirements:** FR-011, FR-015, FR-039, FR-044, FR-050; applicable tests in RTM.
+- **Acceptance criteria:** Freeze coherent snapshot values and provenance, not a transaction-ledger reconstruction; missing past data stays missing; comparable interval residual only with valid completeness assertion and source revisions.
+- **Decision gates:** None.
+
+### TASK-011 — Goal lifecycle
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 4.1 / 4 h, focused tests and notes included.
+- **Dependencies:** TASK-008A.
+- **Related requirements:** FR-016; applicable tests in RTM.
+- **Acceptance criteria:** Owned multiple goals with valid targets/deadlines and explicit closure; no cash reservation behavior.
+- **Decision gates:** None.
+
+### TASK-029 — Account-linked goal progress
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 4.4 / 4 h, focused tests and notes included.
+- **Dependencies:** TASK-011, TASK-003.
+- **Related requirements:** FR-018, FR-048, NFR-008; applicable tests in RTM.
+- **Acceptance criteria:** Owned account links have one active goal per account; concurrent assignments cannot duplicate funding; value/withdrawal changes affect progress without locking money.
+- **Decision gates:** None.
+
+### TASK-013 — Indicative saving projections
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 4.3 / 4 h, focused tests and notes included.
+- **Dependencies:** TASK-029, TASK-002.
+- **Related requirements:** FR-019; applicable tests in RTM.
+- **Acceptance criteria:** Use linked values, remaining target and local deadline; show funded/overdue/incomplete states and upward-rounded amount; do not infer actual income or investment returns.
+- **Decision gates:** None.
+
+### TASK-030 — Optional profile and review dates
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 4.5 / 8 h, focused tests and notes included.
+- **Dependencies:** TASK-025B, TASK-003.
+- **Related requirements:** FR-040, FR-050; applicable tests in RTM.
+- **Acceptance criteria:** Users manually maintain optional income/expense estimates and explicitly confirm unchanged information; estimated surplus stays separate; no profile requirement for reports.
+- **Decision gates:** None.
+
+### TASK-007B — Owned export and expanded recovery
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 2.4.2 / 6 h, focused tests and notes included.
+- **Dependencies:** TASK-007A, TASK-010, TASK-029, TASK-030.
+- **Related requirements:** FR-029, FR-030, FR-031, NFR-011; applicable tests in RTM.
+- **Acceptance criteria:** Export only own data with exact values and safe text; repeat recovery with goals, profile, snapshots, identity/session state and job-state safeguards; whole backup remains operator-only.
+- **Decision gates:** None.
+
+### TASK-031 — Saved private monthly reports
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 6.4 / 14 h, focused tests and notes included.
+- **Dependencies:** TASK-010, TASK-013, TASK-030, TASK-007B.
+- **Related requirements:** FR-043, FR-044, FR-050; applicable tests in RTM.
+- **Acceptance criteria:** Previous local calendar-month report contains available month-end values, reported movements, goal state and dated profile estimates; preserve missing data and source versions. Atomic immutable revisions, owner-only viewing and no automatic AI.
+- **Decision gates:** None.
+
+### TASK-032 — Monthly reporting scheduler
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 6.5 / 12 h, focused tests and notes included.
+- **Dependencies:** TASK-031.
+- **Related requirements:** FR-041, FR-043; applicable tests in RTM.
+- **Acceptance criteria:** Single scheduled management command claims unique occurrences, survives repeated/concurrent invocation and generates reports without fresh user input or SMTP success; test timezone/month/DST/downtime behavior.
+- **Decision gates:** OQ-005.
+
+### TASK-033 — Generic reminder email
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 6.6 / 10 h, focused tests and notes included.
+- **Dependencies:** TASK-032, TASK-025B.
+- **Related requirements:** FR-042, NFR-003, NFR-010; applicable tests in RTM.
+- **Acceptance criteria:** Send approved generic reminders to verified email using fakes; inspect subjects/bodies/links/logs for financial details or bearer report access; failures do not block reports and ambiguity is visible.
+- **Decision gates:** OQ-005, OQ-009.
+
+### TASK-019 — System, privacy and owner verification
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 7.1 / 24 h, focused tests and notes included.
+- **Dependencies:** TASK-007B, TASK-013, TASK-030, TASK-033, TASK-023, TASK-027.
+- **Related requirements:** FR-036, NFR-004, NFR-007, NFR-013; applicable tests in RTM.
+- **Acceptance criteria:** Run all MVP acceptance scenarios with synthetic multi-user fixtures, direct-ID/job/export/cache attacks, exact wealth/unknown attribution, usability and recovery. Record actual evidence and close mandatory defects.
+- **Decision gates:** None.
+
+### TASK-020 — Compose deployment and recovery rehearsal
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 7.2 / 24 h, focused tests and notes included.
+- **Dependencies:** TASK-019, TASK-024.
+- **Related requirements:** FR-001, FR-029, FR-030, FR-032, FR-045, FR-047, NFR-001, NFR-002, NFR-009, NFR-011; applicable tests in RTM.
+- **Acceptance criteria:** After separate infrastructure/deployment authorization, validate ARM64 Compose app/database/runner/tunnel lifecycle on intended Pi/CasaOS host, private listeners/volumes, HTTPS/session settings, backup restoration, rollback and sanitized health. No sensitive data before the release gate.
+- **Decision gates:** OQ-003, OQ-006, OQ-008, OQ-009, OQ-010.
+
+### TASK-021 — Release documentation and acceptance
+
+- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **WBS / estimate:** 7.3 / 12 h, focused tests and notes included.
+- **Dependencies:** TASK-020.
+- **Related requirements:** FR-047, NFR-009; applicable tests in RTM.
+- **Acceptance criteria:** Observed setup, account/profile/report workflows, operations, recovery, limitations and owner acceptance are recorded; no automatic commit/push/merge/deploy. Real users/sensitive data require all release gates and separate authorization.
+- **Decision gates:** None.
+
+## Non-additive completion rollups
+
+A rollup depends on completion of its named children. Its completion dependency is not inherited by an early child; only each leaf's explicit dependency list controls execution. All rollups remain Not Started. TASK-004A was formerly an executable leaf and is now a six-hour rollup; its original role is explicitly split, not counted again.
+
+| ID | Title | Children | Rollup budget, not extra |
+|---|---|---|---|
+| TASK-004 | Account and asset workflows | TASK-004A, TASK-004B | 10 h |
+| TASK-004A | Basic accounts and observations | TASK-004A1, TASK-004A2 | 6 h |
+| TASK-007 | Backup, restore and CSV | TASK-007A, TASK-007B | 16 h |
+| TASK-008 | Manual prices and valuation | TASK-008A, TASK-008B | 8 h |
+| TASK-022 | Django foundation | TASK-022A, TASK-022B | 16 h |
+| TASK-025 | Authentication | TASK-025A, TASK-025B | 20 h |
+
+## Historical deferred or superseded tasks
+
+Original task descriptions/estimates remain in baseline `5052b5b`. No original ID is reassigned to a different feature. No remaining budget or completion claim is attached here.
+
+| ID | Original purpose | Disposition / new coverage |
+|---|---|---|
+| TASK-005 | Financial ledger workflows | Deferred ledger/reservation/Telegram work. Observation replay uses TASK-003/004A2/028; goal links use TASK-029; reports/email use TASK-031/032/033; composition uses TASK-008B. |
+| TASK-005A | Atomic opening transactions and replay protection | Deferred ledger/reservation/Telegram work. Observation replay uses TASK-003/004A2/028; goal links use TASK-029; reports/email use TASK-031/032/033; composition uses TASK-008B. |
+| TASK-005B | Income, expense and trading ledger | Deferred ledger/reservation/Telegram work. Observation replay uses TASK-003/004A2/028; goal links use TASK-029; reports/email use TASK-031/032/033; composition uses TASK-008B. |
+| TASK-006 | Ledger corrections and transfers | Deferred ledger/reservation/Telegram work. Observation replay uses TASK-003/004A2/028; goal links use TASK-029; reports/email use TASK-031/032/033; composition uses TASK-008B. |
+| TASK-009 | Monthly cash-flow dashboard and distribution | Actual cash-flow dashboard deferred; current wealth composition follows TASK-008B and historical snapshots TASK-010. |
+| TASK-012 | Atomic cash reservations | Deferred ledger/reservation/Telegram work. Observation replay uses TASK-003/004A2/028; goal links use TASK-029; reports/email use TASK-031/032/033; composition uses TASK-008B. |
+| TASK-016 | Telegram recipient and preferences | Deferred ledger/reservation/Telegram work. Observation replay uses TASK-003/004A2/028; goal links use TASK-029; reports/email use TASK-031/032/033; composition uses TASK-008B. |
+| TASK-017 | Scheduled Telegram summaries | Deferred ledger/reservation/Telegram work. Observation replay uses TASK-003/004A2/028; goal links use TASK-029; reports/email use TASK-031/032/033; composition uses TASK-008B. |
+| TASK-018 | Telegram goal notifications | Deferred ledger/reservation/Telegram work. Observation replay uses TASK-003/004A2/028; goal links use TASK-029; reports/email use TASK-031/032/033; composition uses TASK-008B. |
+
+## Later Gemini release — outside 264 hours
+
+### TASK-014 — Later Gemini adapter and consent
+
+- **Type / priority / release / status:** Executable leaf / Must if later Gemini release is selected / Later Gemini / Not Started.
+- **Estimate / WBS:** 12 h / 5.1.
+- **Dependencies:** TASK-021.
+- **Requirements:** FR-024.
+- **Acceptance criteria:** Immutable minimized exact preview, single-use consent, bounded fake-tested adapter, redacted failures and no financial tools; provider configuration separate.
+- **Decision gates:** OQ-011; separate task authorization.
+
+### TASK-015 — Later savings and goal explanations
+
+- **Type / priority / release / status:** Executable leaf / Must if later Gemini release is selected / Later Gemini / Not Started.
+- **Estimate / WBS:** 12 h / 5.2.
+- **Dependencies:** TASK-014.
+- **Requirements:** FR-020, FR-021, FR-022, FR-023.
+- **Acceptance criteria:** Explain approved wealth/savings/projections with warnings; no fabricated authoritative data or personalized security buy/sell advice; provider failure preserves core.
+- **Decision gates:** OQ-011; separate task authorization.
+
+## Future candidates
+
+| ID | Candidate | Priority / estimate / status | Selection criteria |
+|---|---|---|---|
+| FUT-001 | Automatic prices and provider costs | Could / Not estimated / Deferred | Owner selects scope and approves requirements, dependencies and tests before work. FUT-006 does not defer the clean usable prototype layout. |
+| FUT-002 | Advanced multi-currency/FX analysis | Could / Not estimated / Deferred | Owner selects scope and approves requirements, dependencies and tests before work. FUT-006 does not defer the clean usable prototype layout. |
+| FUT-003 | Inflation adjustment and advanced portfolio analytics | Could / Not estimated / Deferred | Owner selects scope and approves requirements, dependencies and tests before work. FUT-006 does not defer the clean usable prototype layout. |
+| FUT-004 | Recurring records and AI categorization | Could / Not estimated / Deferred | Owner selects scope and approves requirements, dependencies and tests before work. FUT-006 does not defer the clean usable prototype layout. |
+| FUT-005 | Forecasting and scenarios | Could / Not estimated / Deferred | Owner selects scope and approves requirements, dependencies and tests before work. FUT-006 does not defer the clean usable prototype layout. |
+| FUT-006 | Advanced responsive layouts | Could / Not estimated / Deferred | Owner selects scope and approves requirements, dependencies and tests before work. FUT-006 does not defer the clean usable prototype layout. |
+
+Telegram remains deferred under TASK-016/017/018; detailed ledgers, expense categorization, advanced trades and cash reservations remain deferred under their original IDs. None is a hidden MVP dependency. Use the [schedule](PROJECT_SCHEDULE.md) for serial order/milestones and [RTM](../requirements/RTM.md) for requirement coverage.
+
+## Next eligible preparation
+
+After this documentation revision is human-reviewed, TASK-022A is the next leaf to prepare, not automatically implement. Resolve only its applicable gates; do not force the entire secure foundation before a synthetic prototype. Its completion does not authorize TASK-025A or any other task. Financial policies, identity lifecycle and deployment gates remain at their recorded tasks.

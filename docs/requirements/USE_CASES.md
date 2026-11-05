@@ -1,361 +1,255 @@
 # Finance Tracker — Use Cases
 
-Status: Proposed interactions, not implemented workflows.
-
-## Actors and boundary
-
-The **Personal User** is the primary actor and beneficiary. Gemini and Telegram Bot API are external supporting systems, not human users. A host scheduler is a supporting technical actor outside the application boundary: it starts the optional local runner. SQLite and internal services are components inside the boundary, not actors. UC-014 is time-triggered on behalf of the Personal User; the user does not manually initiate each delivery.
-
-## Milestone applicability
-
-M-001A exercises UC-001, create/list portions of UC-002, opening-only UC-003, initial-price UC-007, basic-total UC-008, and essential backup/restore UC-015. The initial asset/opening/optional-price inputs can share one form, but services commit them in one unit of work; following several use cases never permits separate partial commits. Replay protection and rollback are required (TC-051/052). Other alternatives, full reports, corrections/transfers, goals and external interactions retain later gates. M-001A does not mean these broader use cases are fully accepted; M-004 remains the 92-hour complete core.
-
-## Specifications
-
-### UC-001 — Configure and launch the local core
-
-- **Primary actor:** Personal User
-- **Trigger:** The user starts a fresh local installation.
-- **Preconditions:** The supported local runtime is available; the user controls the host.
-- **Related functional requirements:** FR-001, FR-002, FR-032
-
-**Main success scenario**
-
-1. Read environment configuration and validate paths.
-2. Require a reporting currency/scale on a fresh dataset.
-3. Open the local dataset and show the dashboard with integrations disabled.
-
-- **Alternative flows:** An existing dataset reuses its persisted currency; absent API keys leave adapters off.
-- **Exception flows:** An invalid path or incompatible dataset displays a redacted error without changing data.
-- **Postconditions:** A valid local dataset is available; committed records survive restart.
-
-### UC-002 — Manage accounts and asset definitions
-
-- **Primary actor:** Personal User
-- **Trigger:** The user opens account/asset management.
-- **Preconditions:** UC-001 is complete.
-- **Related functional requirements:** FR-003, FR-004
-
-**Main success scenario**
-
-1. Create or select an account.
-2. Enter or update an asset name, type, unit, and optional quoted currency.
-3. Validate and save; show the resulting account/asset list.
-
-- **Alternative flows:** Delete unused definitions; archive zero-balance definitions whose history must remain.
-- **Exception flows:** Referenced physical deletion, duplicate names, or archiving nonzero holdings is rejected.
-- **Postconditions:** Definitions are persisted or no data changes on failure.
-
-### UC-003 — Record a holding transaction
-
-- **Primary actor:** Personal User
-- **Trigger:** The user records an opening, purchase, sale, or quantity adjustment.
-- **Preconditions:** Account and asset definitions exist; base cash is available for purchases.
-- **Related functional requirements:** FR-006
-
-**Main success scenario**
-
-1. Select the transaction type and effective date.
-2. Enter quantities and, for purchases/sales, base-currency settlement.
-3. Validate holdings and unreserved cash; commit all postings atomically.
-
-- **Alternative flows:** Opening holdings and explained adjustments have no income/expense classification.
-- **Exception flows:** An insufficient holding/cash balance, future date, or invalid quantity rejects all postings.
-- **Postconditions:** Quantities and settlement cash agree; history records the manual event.
-
-### UC-004 — Record income or expense
-
-- **Primary actor:** Personal User
-- **Trigger:** The user opens an income or expense form.
-- **Preconditions:** An active account with base cash support exists.
-- **Related functional requirements:** FR-007, FR-008
-
-**Main success scenario**
-
-1. Enter date, category, positive amount, and optional note.
-2. Validate precision, required fields, and available unreserved cash.
-3. Commit the header and posting; refresh the monthly summary.
-
-- **Alternative flows:** An empty category uses an explicit user-selected general category rather than silently guessing.
-- **Exception flows:** Invalid amount or expense breaching reservations leaves the dataset unchanged.
-- **Postconditions:** Cash and the selected month reflect one committed event.
-
-### UC-005 — Correct or delete a financial transaction
-
-- **Primary actor:** Personal User
-- **Trigger:** The user selects an existing transaction for correction/deletion.
-- **Preconditions:** The effective transaction exists and is not already superseded.
-- **Related functional requirements:** FR-009
-
-**Main success scenario**
-
-1. Show the original event and proposed replacement or deletion effect.
-2. Validate the resulting dated balances and current reservations.
-3. After confirmation, commit the reversal and optional replacement together.
-
-- **Alternative flows:** Cancel leaves the original event effective; descriptions may be corrected through the same history mechanism.
-- **Exception flows:** A repeat deletion, negative historical holding, or reservation breach rejects the operation.
-- **Postconditions:** The effective record changes once; audit history remains available.
-
-### UC-006 — Transfer cash
-
-- **Primary actor:** Personal User
-- **Trigger:** The user chooses a transfer between accounts.
-- **Preconditions:** Two distinct active accounts exist; the source has enough unreserved base cash.
-- **Related functional requirements:** FR-010
-
-**Main success scenario**
-
-1. Select source, destination, date, and positive amount.
-2. Validate both account references and source availability.
-3. Commit equal opposite cash postings and refresh balances.
-
-- **Alternative flows:** Cancel produces no posting.
-- **Exception flows:** Self-transfer, insufficient funds, or a failed second posting rolls back the whole transfer.
-- **Postconditions:** Total cash is unchanged and no income/expense is created.
-
-### UC-007 — Maintain manual prices
-
-- **Primary actor:** Personal User
-- **Trigger:** The user enters or corrects a price observation.
-- **Preconditions:** The non-base-cash asset exists.
-- **Related functional requirements:** FR-005
-
-**Main success scenario**
-
-1. Select the asset and effective date.
-2. Enter a finite positive reporting-currency price per declared unit.
-3. Save the observation and refresh dependent valuations.
-
-- **Alternative flows:** Correct an existing observation through an auditable superseding revision.
-- **Exception flows:** A future date, zero/negative/nonfinite price, or invalid unit input is rejected.
-- **Postconditions:** Dated price history is available without an external price service.
-
-### UC-008 — Review the financial dashboard
-
-- **Primary actor:** Personal User
-- **Trigger:** The user opens or changes the dashboard period.
-- **Preconditions:** A local dataset exists; it may be empty or partially priced.
-- **Related functional requirements:** FR-011, FR-012, FR-013, FR-014, FR-015
-
-**Main success scenario**
-
-1. Read effective holdings and the appropriate dated manual prices.
-2. Calculate totals, completeness, distributions, and monthly savings.
-3. Display charts, historical trends, units, and warnings.
-
-- **Alternative flows:** An empty dataset shows guidance; unpriced holdings show separately from the priced subtotal.
-- **Exception flows:** A persistence error displays a recoverable message without presenting fabricated totals.
-- **Postconditions:** The user sees deterministic figures; no financial records change.
-
-### UC-009 — Manage savings goals
-
-- **Primary actor:** Personal User
-- **Trigger:** The user creates or edits a savings goal.
-- **Preconditions:** The reporting currency is fixed.
-- **Related functional requirements:** FR-016
-
-**Main success scenario**
-
-1. Enter a name, positive target amount, and target date.
-2. Validate and save the goal.
-3. Show the goal alongside other active goals.
-
-- **Alternative flows:** Archive/delete with an explicit release confirmation when reservations exist.
-- **Exception flows:** Invalid targets fail unchanged; past dates remain allowed with an overdue status.
-- **Postconditions:** The goal is persisted; confirmed closure releases its reservations atomically.
-
-### UC-010 — Reserve savings and view progress
-
-- **Primary actor:** Personal User
-- **Trigger:** The user allocates or releases cash for a goal.
-- **Preconditions:** An active goal and a base-currency cash account exist.
-- **Related functional requirements:** FR-017, FR-018
-
-**Main success scenario**
-
-1. Show source balance, existing reservations, and available cash.
-2. Enter the reservation/release amount and validate inside a write transaction.
-3. Commit and show updated remaining target and progress.
-
-- **Alternative flows:** A fully funded goal may receive an explicit excess reservation, displayed separately.
-- **Exception flows:** Over-allocation, concurrent balance changes, or invalid releases roll back the operation.
-- **Postconditions:** Cash does not move; aggregate reservations remain within account cash.
-
-### UC-011 — Review required contributions
-
-- **Primary actor:** Personal User
-- **Trigger:** The user opens a goal projection.
-- **Preconditions:** A saved goal exists.
-- **Related functional requirements:** FR-019
-
-**Main success scenario**
-
-1. Determine the unfunded target and owner-local current date.
-2. Count monthly opportunities through the deadline month.
-3. Display the upward-rounded contribution or overdue/funded state.
-
-- **Alternative flows:** A deadline today has one opportunity; a funded goal needs zero.
-- **Exception flows:** An invalid stored target/date is reported as a data-integrity error rather than used in division.
-- **Postconditions:** The projection is shown without financial writes or Gemini calls.
-
-### UC-012 — Request a Gemini explanation
-
-- **Primary actor:** Personal User
-- **Trigger:** The user selects spending, summary, goal feasibility, or a financial question.
-- **Preconditions:** Gemini is explicitly enabled and configured; relevant deterministic summaries are available.
-- **Related functional requirements:** FR-020, FR-021, FR-022, FR-023, FR-024
-
-**Main success scenario**
-
-1. Select the question/explanation type and reporting period.
-2. Build a minimized deterministic context.
-3. Perform UC-017 to preview and approve the exact payload.
-4. Send once through the adapter and display an AI-generated explanatory response.
-
-- **Alternative flows:** Canceling UC-017 ends the workflow without a request; sparse data remains labeled.
-- **Exception flows:** Timeout, quota, invalid credentials, or malformed output produces a redacted error; no financial operation is executed.
-- **Postconditions:** Only approved data may leave the device; financial records are unchanged.
-
-### UC-013 — Configure Telegram reporting
-
-- **Primary actor:** Personal User
-- **Trigger:** The user enables or edits Telegram settings in the dashboard.
-- **Preconditions:** The bot token is supplied by environment configuration.
-- **Related functional requirements:** FR-025, FR-028
-
-**Main success scenario**
-
-1. Enter one private-chat recipient and validate its type/identity through Telegram.
-2. Send a deliberate non-financial connection test and ask the user to confirm the destination.
-3. Preview/approve report fields, timezone, and chosen schedules; explicitly enable selected rules.
-
-- **Alternative flows:** Leave all rules disabled or disable an existing rule; changing the recipient requires revalidation and fresh content approval.
-- **Exception flows:** Missing identity, group chat, mismatch, or API error prevents financial-message enablement.
-- **Postconditions:** The one authorized destination and explicit preferences are persisted; no incoming command handler is enabled.
-
-### UC-014 — Receive scheduled reports and reminders
-
-- **Primary actor:** Personal User (beneficiary; host scheduler initiates execution)
-- **Trigger:** The host scheduler invokes the local notification runner and an enabled rule is due.
-- **Preconditions:** UC-013 is complete; relevant financial records exist; the host and network are available.
-- **Related functional requirements:** FR-026, FR-027
-
-**Main success scenario**
-
-1. Claim the latest due occurrence under a unique delivery key.
-2. Recheck enablement and the authorized destination; build the approved deterministic report.
-3. Send through Telegram and persist acknowledgement or a bounded failure state.
-
-- **Alternative flows:** No due work exits without a message; after downtime consider only the latest due occurrence for each rule.
-- **Exception flows:** Definite transient failure may retry within the limit; timeout after send becomes uncertain and requires user resolution rather than blind resend.
-- **Postconditions:** Acknowledged occurrences are not resent; financial records remain unchanged.
-
-### UC-015 — Back up or restore the local dataset
-
-- **Primary actor:** Personal User
-- **Trigger:** The user requests a backup or a recovery operation.
-- **Preconditions:** A writable owner-controlled backup path exists; restore can stop the UI and notification writers.
-- **Related functional requirements:** FR-029, FR-030
-
-**Main success scenario**
-
-1. For backup, produce a consistent snapshot and validate it before reporting success.
-2. For restore, validate a candidate separately for schema, integrity, and business invariants.
-3. Show replacement impact and require explicit confirmation.
-4. Stop writers, create a pre-restore backup, replace the dataset safely, then verify before resuming.
-
-- **Alternative flows:** Cancel restore preserves live data; backup alone never replaces the current dataset.
-- **Exception flows:** Corrupt/incompatible input or failure to make the safety backup aborts restore; failed replacement uses the documented rollback procedure.
-- **Postconditions:** A validated backup exists, or the selected valid dataset is restored with a recovery path.
-
-### UC-016 — Export CSV records
-
-- **Primary actor:** Personal User
-- **Trigger:** The user requests a local CSV export.
-- **Preconditions:** The local dataset can be read; an owner-controlled export path is available.
-- **Related functional requirements:** FR-031
-
-**Main success scenario**
-
-1. Choose the record groups and date range.
-2. Read a consistent dataset and serialize IDs, exact amounts, units, currency/scale, and dates.
-3. Neutralize spreadsheet-formula text and write a documented export set.
-
-- **Alternative flows:** Exporting an empty selection produces headers and an explicit empty result.
-- **Exception flows:** Read/write failure gives no success claim; secrets and API configuration are never exported.
-- **Postconditions:** Portable CSV files exist; the database is unchanged and CSV is not represented as a backup.
-
-### UC-017 — Preview and approve AI context
-
-- **Primary actor:** Personal User
-- **Trigger:** UC-012 prepares a Gemini request.
-- **Preconditions:** A current question and minimized summary are available.
-- **Related functional requirements:** FR-024
-
-**Main success scenario**
-
-1. Display the exact outbound financial summary and question.
-2. Explain external transmission and allow cancel or edit.
-3. Bind explicit send approval to this payload for this request only.
-
-- **Alternative flows:** An edit rebuilds the preview and requires new approval.
-- **Exception flows:** A changed underlying summary invalidates the pending approval and requires review again.
-- **Postconditions:** A single approved payload is returned to UC-012, or no request is authorized.
-
-## Editable UML use-case diagram
-
-PlantUML is used for UML actor associations and an actual include relationship. UC-012 includes UC-017 because every attempted send requires preview/approval; cancellation exits before transmission. No extend relationship is needed. All actor associations describe participation, not data-flow direction. This source is authoritative and can be extracted into a `.puml` file later; no renderer or generated screenshot is required for editing.
-
-```plantuml
-@startuml
-left to right direction
-actor "Personal User" as User
-actor "Gemini API" as Gemini <<external system>>
-actor "Telegram Bot API" as Telegram <<external system>>
-actor "Host scheduler" as Scheduler <<supporting system>>
-rectangle "Finance Tracker" {
-  usecase "UC-001\nConfigure and launch the local core" as U1
-  usecase "UC-002\nManage accounts and asset definitions" as U2
-  usecase "UC-003\nRecord a holding transaction" as U3
-  usecase "UC-004\nRecord income or expense" as U4
-  usecase "UC-005\nCorrect or delete a financial transaction" as U5
-  usecase "UC-006\nTransfer cash" as U6
-  usecase "UC-007\nMaintain manual prices" as U7
-  usecase "UC-008\nReview the financial dashboard" as U8
-  usecase "UC-009\nManage savings goals" as U9
-  usecase "UC-010\nReserve savings and view progress" as U10
-  usecase "UC-011\nReview required contributions" as U11
-  usecase "UC-012\nRequest a Gemini explanation" as U12
-  usecase "UC-013\nConfigure Telegram reporting" as U13
-  usecase "UC-014\nReceive scheduled reports and reminders" as U14
-  usecase "UC-015\nBack up or restore the local dataset" as U15
-  usecase "UC-016\nExport CSV records" as U16
-  usecase "UC-017\nPreview and approve AI context" as U17
-}
-User -- U1
-User -- U2
-User -- U3
-User -- U4
-User -- U5
-User -- U6
-User -- U7
-User -- U8
-User -- U9
-User -- U10
-User -- U11
-User -- U12
-User -- U13
-User -- U14
-User -- U15
-User -- U16
-User -- U17
-Gemini -- U12
-Telegram -- U13
-Telegram -- U14
-Scheduler -- U14
-U12 ..> U17 : <<include>>
-@enduml
+Status: Planned revised workflows. User, Admin and Operator are distinct actors; Scheduler, SMTP and later Gemini are supporting actors. PostgreSQL/ORM are internal components. Prototype authentication is a synthetic-only subset of UC-020; UC-002/023 provide its account/card workflow. M-007 gates all real-user/sensitive-data use.
+
+## UC-001 — Configure and launch
+
+- **Primary actor:** User / Operator
+- **Trigger:** Start application.
+- **Preconditions:** Approved local environment.
+- **Requirements:** FR-001, FR-002, FR-032.
+- **Main success flow:** Validate configuration and the prototype/release mode; choose or reuse permitted reporting settings; open the authenticated UI.
+- **Alternatives / exceptions:** Invalid configuration gives redacted errors; external credentials are optional.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-002 — Manage accounts and asset definitions
+
+- **Primary actor:** User
+- **Trigger:** Open Accounts.
+- **Preconditions:** Authenticated owned workspace.
+- **Requirements:** FR-003, FR-004.
+- **Main success flow:** Create/rename an account or define an instrument with units; validate; show a readable card/list.
+- **Alternatives / exceptions:** Reject cross-owner/reference misuse; archive preserves history.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-007 — Maintain manual prices
+
+- **Primary actor:** User
+- **Trigger:** Enter or revise a price.
+- **Preconditions:** Owned non-base holding.
+- **Requirements:** FR-005.
+- **Main success flow:** Enter effective date and exact price; validate; save revision; refresh current valuation.
+- **Alternatives / exceptions:** Reject future/nonfinite input; historical snapshots stay unchanged.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-008 — Review wealth and history
+
+- **Primary actor:** User
+- **Trigger:** Open Dashboard.
+- **Preconditions:** Authenticated owned workspace.
+- **Requirements:** FR-011, FR-012, FR-014, FR-015, FR-044, FR-050.
+- **Main success flow:** Read coherent observations/prices; calculate qualified totals; display cards, composition or saved historical snapshots.
+- **Alternatives / exceptions:** Empty and missing/stale states are explicit; no historical backfill.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-009 — Manage savings goals
+
+- **Primary actor:** User
+- **Trigger:** Create/edit/close goal.
+- **Preconditions:** Currency configured.
+- **Requirements:** FR-016.
+- **Main success flow:** Enter target and date; validate; save; show linked-account progress.
+- **Alternatives / exceptions:** Closure ends links without cash movement; overdue is labeled.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-011 — Review indicative monthly saving
+
+- **Primary actor:** User
+- **Trigger:** Open goal plan.
+- **Preconditions:** Saved goal.
+- **Requirements:** FR-019.
+- **Main success flow:** Use local date and qualified linked values to calculate an indicative monthly saving.
+- **Alternatives / exceptions:** Funded/overdue/incomplete states prevent misleading amounts.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-012 — Request Gemini explanation
+
+- **Primary actor:** User
+- **Trigger:** Choose explanation.
+- **Preconditions:** Later integration configured.
+- **Requirements:** FR-020, FR-021, FR-022, FR-023, FR-024.
+- **Main success flow:** Build minimized computed summary; invoke UC-017; send approved payload once; display labeled untrusted text.
+- **Alternatives / exceptions:** Cancel/stale approval makes no call; provider failure preserves core; no personalized security advice.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-015 — Back up or restore system
+
+- **Primary actor:** Operator
+- **Trigger:** Request maintenance.
+- **Preconditions:** Separately authorized private operator access.
+- **Requirements:** FR-029, FR-030.
+- **Main success flow:** Create consistent PostgreSQL backup; validate candidate separately; confirm replacement; stop writers; make safety backup; restore and verify ownership, values and session/job safety.
+- **Alternatives / exceptions:** Abort invalid restore without changing live data; rollback remains available.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-016 — Export own data
+
+- **Primary actor:** User
+- **Trigger:** Request CSV.
+- **Preconditions:** Authenticated own records.
+- **Requirements:** FR-031.
+- **Main success flow:** Choose groups/period; read consistent owned records; serialize exact values and neutralize formula-like text.
+- **Alternatives / exceptions:** No cross-owner data or credentials; not a recovery backup.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-017 — Approve exact Gemini context
+
+- **Primary actor:** User
+- **Trigger:** Prepared AI question.
+- **Preconditions:** Later summary available.
+- **Requirements:** FR-024.
+- **Main success flow:** Preview exact minimized context and question; edit/cancel or approve a single request.
+- **Alternatives / exceptions:** Any context/question change invalidates approval; consumed approval cannot replay.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-018 — Link accounts to goals
+
+- **Primary actor:** User
+- **Trigger:** Choose goal accounts.
+- **Preconditions:** Owned active goal/accounts.
+- **Requirements:** FR-018, FR-048.
+- **Main success flow:** Show each account value/freshness; assign accounts; enforce one active goal per account; recompute progress.
+- **Alternatives / exceptions:** Concurrent duplicate funding fails; withdrawal remains allowed.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-019 — Invite a member
+
+- **Primary actor:** Admin
+- **Trigger:** Create invitation.
+- **Preconditions:** MFA-authorized Admin.
+- **Requirements:** FR-033.
+- **Main success flow:** Enter intended email; issue expiring single-use invitation; recipient proves possession and enrolls.
+- **Alternatives / exceptions:** Used/revoked/expired token fails; no public signup or financial access.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-020 — Sign in, sign out or recover
+
+- **Primary actor:** User / Admin
+- **Trigger:** Open login or recovery.
+- **Preconditions:** Provisioned synthetic identity or invited release account.
+- **Requirements:** FR-034.
+- **Main success flow:** Authenticate through standard Django foundations; enforce role/MFA state; create secure session or send reset to existing verified email; sign-out revokes access.
+- **Alternatives / exceptions:** Generic failure/reset response; suspension/recovery invalidates sessions; prototype does not claim full release controls.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-021 — Administer users and health
+
+- **Primary actor:** Admin
+- **Trigger:** Open administration.
+- **Preconditions:** Authenticated MFA-approved Admin.
+- **Requirements:** FR-035, FR-045, FR-051.
+- **Main success flow:** Inspect membership and sanitized health; invite/suspend permitted identities.
+- **Alternatives / exceptions:** No financial records, arbitrary password setting, impersonation or takeover via email/role changes.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-022 — Access an owned financial resource
+
+- **Primary actor:** User
+- **Trigger:** Request financial page/action/export.
+- **Preconditions:** Authenticated active User.
+- **Requirements:** FR-036.
+- **Main success flow:** Derive owner on server; authorize object and related references; return only owned results.
+- **Alternatives / exceptions:** Cross-owner or Admin request fails without financial content or mutation.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-023 — Update or revise observations
+
+- **Primary actor:** User
+- **Trigger:** Enter current account information.
+- **Preconditions:** Owned account.
+- **Requirements:** FR-037, FR-049.
+- **Main success flow:** Enter balances/quantities and dates; optionally include UC-024; validate and save one update batch; refresh cards.
+- **Alternatives / exceptions:** Opening is baseline; rollback/replay/conflicting version preserves prior data; revisions retain originals.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-024 — Annotate savings movements
+
+- **Primary actor:** User
+- **Trigger:** Classify savings in an update.
+- **Preconditions:** Current update intent.
+- **Requirements:** FR-038.
+- **Main success flow:** Enter contributions/withdrawals/internal movements with dates and amounts; save with observations once.
+- **Alternatives / exceptions:** Skipping classification is allowed; unknown amount/completeness limits attribution; never add annotated amount again.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-025 — Review change attribution
+
+- **Primary actor:** User
+- **Trigger:** Compare two snapshots.
+- **Preconditions:** Owned endpoints.
+- **Requirements:** FR-039.
+- **Main success flow:** Show recorded wealth change and reported movements; check coverage, valuation and interval-completeness assertion; show supported residual or unknown.
+- **Alternatives / exceptions:** No entries does not mean zero flows; changed source revisions invalidate confirmation; residual is not investment profit.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-026 — Review optional financial profile
+
+- **Primary actor:** User
+- **Trigger:** Open Profile.
+- **Preconditions:** Authenticated User.
+- **Requirements:** FR-040, FR-050.
+- **Main success flow:** Enter monthly estimates or explicitly confirm unchanged information; save review date.
+- **Alternatives / exceptions:** Omission does not block core/reports; estimates do not alter balances.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-027 — Configure schedule and receive reminder
+
+- **Primary actor:** User / Scheduler
+- **Trigger:** Enable schedule or due reminder.
+- **Preconditions:** Verified email for sending.
+- **Requirements:** FR-041, FR-042.
+- **Main success flow:** Choose timezone/monthly occurrence; explicitly enable; runner claims due reminder and sends generic email outside financial transaction.
+- **Alternatives / exceptions:** No financial details/token report access; disablement and SMTP ambiguity are respected.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-028 — Generate and view monthly report
+
+- **Primary actor:** User / Scheduler
+- **Trigger:** Report occurrence due.
+- **Preconditions:** Enabled schedule.
+- **Requirements:** FR-043, FR-044, FR-050.
+- **Main success flow:** Claim occurrence; build coherent previous-local-month report using available data; save immutable private revision; user signs in to view.
+- **Alternatives / exceptions:** Stale/absent profile and email failure do not block; retries do not duplicate; regenerate as new revision.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## UC-029 — Verify and operate release
+
+- **Primary actor:** Operator
+- **Trigger:** Authorized release work.
+- **Preconditions:** Reviewed task and explicit operation permission.
+- **Requirements:** FR-046, FR-047.
+- **Main success flow:** Run CI/synthetic checks; verify Pi/CasaOS/Compose/Tunnel compatibility; rehearse private deployment/recovery/rollback; record owner acceptance.
+- **Alternatives / exceptions:** Prototype/full foundation does not permit real data; deployment still needs separate permission.
+- **Postconditions:** Authorized result is available with its provenance; failed/canceled writes leave prior data intact.
+
+## Historical use cases
+
+| ID | Original concept | Status |
+|---|---|---|
+| UC-003 | Record holding transactions | Deferred/superseded; original specification retained at baseline 5052b5b. |
+| UC-004 | Record income or expense | Deferred/superseded; original specification retained at baseline 5052b5b. |
+| UC-005 | Correct/delete financial transactions | Deferred/superseded; original specification retained at baseline 5052b5b. |
+| UC-006 | Transfer cash using postings | Deferred/superseded; original specification retained at baseline 5052b5b. |
+| UC-010 | Reserve savings | Deferred/superseded; original specification retained at baseline 5052b5b. |
+| UC-013 | Configure Telegram reporting | Deferred/superseded; original specification retained at baseline 5052b5b. |
+| UC-014 | Receive Telegram financial messages | Deferred/superseded; original specification retained at baseline 5052b5b. |
+
+## Editable interaction diagram
+
+```mermaid
+flowchart LR
+    User --> Login["UC-020 Sign in"]
+    User --> Update["UC-023 Update observations"]
+    Update --> Movements["UC-024 Optional savings classification"]
+    User --> Wealth["UC-008 Wealth and snapshots"]
+    User --> Goals["UC-018 Link accounts to goals"]
+    User --> Reports["UC-028 Private reports"]
+    Admin --> AdminOps["UC-021 Membership and sanitized health"]
+    Scheduler --> Reports
+    Scheduler --> Email["UC-027 Generic reminder"]
+    Operator --> Recovery["UC-015 Recovery"]
+    User --> AI["UC-012 Later explanation"]
+    AI --> Consent["UC-017 Exact one-call consent"]
 ```
 
-Syntax reference: [PlantUML use-case documentation](https://plantuml.com/use-case-diagram). The diagram is source-reviewed only; local rendering was unavailable. The user association with UC-014 represents receipt of configured reports, not a bot command. Incoming Telegram commands are intentionally unsupported.
+This Mermaid diagram describes interaction flows, not formal UML notation. Actor permissions are specified above; Admin has no path to private wealth/reports. Diagram sources are editable; rendering is validated separately when a renderer is available.

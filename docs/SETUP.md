@@ -1,4 +1,15 @@
-# Finance Tracker local setup and development
+# Finance Tracker — Existing Runtime Setup
+
+**Current implementation:** accepted TASK-001 Streamlit runtime shell at `5052b5b`. The commands below start that existing shell; they do not start Django or a portfolio tracker. Keep it on loopback with synthetic configuration. Historical trusted-LAN instructions below describe the old accepted interface, not authorization to expose it or use sensitive data under the revised release policy.
+
+**Approved target, not yet implemented:** the M-009 Django prototype uses clean Dashboard/Accounts navigation, readable cards, intuitive account creation, standard development login and disposable synthetic SQLite. Its actual commands, dependencies and fixtures will be added by TASK-022A/025A/004A1. Do not invent a runnable Django command before those tasks exist.
+
+**Intended later release environment:** Raspberry Pi 5 (8 GB), CasaOS, Docker Compose, PostgreSQL and Cloudflare Tunnel with HTTPS. TASK-024 verifies ARM64/runtime/OS/image/Compose compatibility; TASK-020 separately implements/rehearses authorized deployment and recovery. No Dockerfile, Compose configuration, database, CI workflow, tunnel or CasaOS setup is created by this revision. Existing x86_64/Python 3.14.8 evidence does not establish that environment's compatibility.
+
+All intermediate work uses synthetic data. Full authentication, ownership authorization, Admin MFA, privacy, recovery and release verification precede real users or sensitive data. See [approved schedule](planning/PROJECT_SCHEDULE.md) and [Decision Log](DECISION_LOG.md). Python 3.14.x development selection remains approved; version/image choices for the intended host remain a recorded gate.
+
+## Existing TASK-001 instructions
+
 
 TASK-001 provides a Python package, validated process configuration, and a minimal
 Streamlit shell. Use the current Linux host and Python 3.14.x under DEC-017; the

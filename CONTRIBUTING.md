@@ -1,6 +1,6 @@
 # Contributing to Finance Tracker
 
-Finance Tracker is a solo-developed, single-user, local-first Python project. Future contributors are welcome to follow the same small, reviewable workflow:
+Finance Tracker is a solo-developed, invite-only self-hosted savings, wealth and investment portfolio tracker. The approved target is Django/PostgreSQL; the existing TASK-001 Streamlit runtime shell remains unchanged until separate implementation work. Future contributors are welcome to follow the same small, reviewable workflow:
 
 **Backlog Task → Branch → Implementation → Tests → Review → Merge**
 
@@ -21,13 +21,9 @@ After following the setup guide, run `python -m pytest -q` and
 test runner needs local socket permission. Use isolated synthetic fixtures and
 private temporary paths, never personal databases or live destinations.
 
-The owner's TASK-001 start instruction lifts DEC-018's execution hold for this
-task only. Its boundary remains runtime/configuration/startup and relevant
-setup tests/documentation. Financial calculations, database schemas, asset
-management, Gemini features, and Telegram features remain later work. Both
-adapters remain disabled. Other decision gates and remaining baseline approval
-under OQ-001 are unchanged. Focused evidence does not complete broader
-requirements, the first-dashboard milestone, or owner acceptance.
+TASK-001 is owner-accepted and integrated at `5052b5b`; that record documents 58 pytest passes and a successful pip check on the original Linux/Python environment. This revision does not rerun them or extend their acceptance to Django, PostgreSQL or the Pi. See DEC-020 through DEC-026 for approved scope and remaining gates.
+
+The 264-hour remaining baseline includes a reusable 16-hour synthetic Django prototype. Its UI uses clear navigation, readable account cards and an intuitive form through simple server-rendered templates. Later target deployment is Raspberry Pi 5 (8 GB), CasaOS, Docker Compose and Cloudflare Tunnel/HTTPS; compatibility and infrastructure remain later work. All intermediate demonstrations use synthetic data; full authentication, authorization, Admin MFA, privacy and recovery/system/deployment gates apply before real users or sensitive data.
 
 ## Task Selection and Traceability
 
@@ -40,7 +36,7 @@ requirements, the first-dashboard milestone, or owner acceptance.
 
 Prepare a brief plan after inspecting affected code and tests. Work on an appropriate branch under the naming rules in [BRANCH.md](BRANCH.md). Preserve unrelated changes and implement only the requested task.
 
-Follow the documented modular monolith: keep authoritative financial calculations independent of Streamlit and external API clients. Use deterministic Decimal/integer arithmetic, explicit dates, atomic persistence, and preserved history. Prevent double-counting and over-allocation. Keep adapters optional and replaceable, and avoid unnecessary frameworks or infrastructure. Proposed technical details remain subject to their recorded reviews.
+Follow the documented modular monolith: keep authoritative financial calculations independent of Django models, UI and external clients. Use deterministic Decimal/integer arithmetic, explicit dates, atomic persistence, and preserved history. Prevent duplicate wealth/contributions; leave unsupported attribution unknown. Goals track linked account values without reservations or spending locks. Keep adapters optional and replaceable, and avoid unnecessary frameworks or infrastructure. Proposed technical details remain subject to their recorded reviews.
 
 If requirements or design documents conflict, report the conflict before implementing the affected behavior. Do not silently expand scope or revise approved requirements or architecture.
 
@@ -48,7 +44,7 @@ If requirements or design documents conflict, report the conflict before impleme
 
 Use the [test plan](docs/testing/TEST_PLAN.md) and task acceptance criteria to choose relevant verification. Add or update meaningful tests alongside behavior changes; do not postpone essential financial or persistence tests to the final testing phase.
 
-Use fixed dates, exact expected values, synthetic data, temporary databases, and fake integrations. Exercise affected calculation boundaries, validation, rollback, replay, history, reservation, or privacy behavior as applicable. Documentation-only work needs link, path, convention, and consistency checks rather than application tests.
+Use fixed dates, exact expected values, synthetic data, temporary databases, and fake integrations. Exercise affected calculation boundaries, validation, rollback, replay, history, snapshot, ownership, or privacy behavior as applicable. Documentation-only work needs link, path, convention, and consistency checks rather than application tests.
 
 Record commands/checks actually executed, outcomes, relevant environment/fixture information, and failures or omissions with reasons. Distinguish automated tests, manual checks, documentation validation, and owner acceptance. Never claim tests passed when they were not run, or claim full acceptance from a limited milestone subset.
 
@@ -56,9 +52,9 @@ Record commands/checks actually executed, outcomes, relevant environment/fixture
 
 Update usage, configuration, and other affected documentation when authorized and necessary for the change. Requirement changes need corresponding traceability and test updates under the existing change-control process. Obtain explicit authorization before modifying approved requirements, Charter constraints, or architecture decisions; report needed updates if outside the current scope.
 
-Keep proposed, approved, implemented, and verified status distinct. Do not mark backlog tasks, requirements, or planned test cases complete without appropriate implementation and verification evidence. This governance bootstrap does not change existing planning files or their statuses.
+Keep proposed, approved, implemented, and verified status distinct. Do not mark backlog tasks, requirements, or planned test cases complete without appropriate implementation and verification evidence. Only TASK-001 has accepted historical implementation evidence; revised requirements/cases and future tasks remain planned.
 
-Under DEC-019, the proposed documentation baseline contains 13 new documentation files and four governance files. Preserve the existing README.md and docs/CHARTER.md modifications and exclude them until separate review; do not automatically stash, revert, or include them. Baseline preparation does not authorize staging, committing, pushing, merging, or changing branches.
+DEC-019's original README/Charter exclusion is historical. DEC-026 explicitly authorizes their current product/governance revision on the documentation branch, stopping at human review. It grants no staging, commit, push, merge, PR, infrastructure or deployment permission. Preserve unrelated work in every task.
 
 ## Commits and Review
 

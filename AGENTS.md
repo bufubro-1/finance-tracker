@@ -2,11 +2,15 @@
 
 ## Project Context
 
-Finance Tracker helps one user track assets, income, expenses, and savings goals. It is a local-first Python modular monolith: Streamlit UI, local SQLite storage, Pandas for presentation data, and Plotly charts. Gemini explanations and Telegram notifications are optional integrations; core financial workflows must work offline without either integration.
+Finance Tracker is an invite-only self-hosted savings, wealth and investment portfolio tracker. Approved target: Python modular monolith, Django server-rendered UI and PostgreSQL; intended host Raspberry Pi 5 (8 GB), CasaOS, Docker Compose and Cloudflare Tunnel/HTTPS. Implementation and compatibility verification remain later tasks. Use **Finance Tracker** under DEC-001 and start with the [documentation index](docs/README.md), [Charter](docs/CHARTER.md) and [Decision Log](docs/DECISION_LOG.md).
 
-Start with the [documentation index](docs/README.md) and [Project Charter](docs/CHARTER.md). Requirements, design, delivery work, and verification are documented in the sources below. Use **Finance Tracker** in new artifacts under DEC-001 in the [Decision Log](docs/DECISION_LOG.md).
+Track manually maintained balances/holdings, simple savings contributions/withdrawals, snapshots, account-linked goals, optional estimated profile and monthly private reports with generic email reminders. Do not require detailed expense/trade ledgers, transaction categorization or cash reservations. Report unsupported change attribution as unknown. Gemini is later and request-approved; Telegram is deferred.
 
-At governance creation, application development is Not Started: no application, migrations, dependency manifest, or executable test suite exists. Planned application tests are unexecuted. The Charter remains Proposed — Pending Owner Approval; DEC-015 approves the first-dashboard milestone and schedule, not every technical proposal. Governance approval does not change these product-document statuses.
+TASK-001 is accepted/integrated at `5052b5b`; its current Streamlit runtime shell and focused tests are historical implemented scope. Django, financial persistence, infrastructure and the remaining tasks are not implemented by this documentation revision. Do not reopen TASK-001 or claim its recorded 58 tests were rerun. Approved remaining planning baseline: 264 h at 8 h/week, including a 16 h prototype allocated from existing leaves.
+
+M-009 is a local synthetic Django prototype with standard development authentication, clean navigation/cards/form and disposable SQLite via ORM. All intermediate demonstrations use synthetic data. Full authentication, authorization, Admin MFA, privacy, PostgreSQL integrity, recovery and deployment/system verification remain mandatory release gates before real users or sensitive data. Application Admin never receives financial-record access; host/database operator is a separate trust boundary.
+
+The owner authorized this protected-document revision only under DEC-026. Revised artifacts await human review; scope/estimate approval does not authorize app/infrastructure implementation, commits, pushes, merges or deployment. Earlier baseline approval/exclusion statements are historical and superseded as recorded in the Decision Log.
 
 ## Source of Truth
 
@@ -24,7 +28,7 @@ Respect each decision's approval status. Proposed mechanisms and thresholds are 
 
 For every development task:
 
-1. Identify its actual backlog task, dependencies, and unresolved decision gates. Use executable leaves, including A/B subtasks, rather than implementing an entire rollup accidentally.
+1. Identify its actual backlog task, dependencies, and unresolved decision gates. Use executable leaves, including A/B and numbered child subtasks, rather than implementing an entire rollup accidentally.
 2. Read its functional requirements, applicable non-functional requirements/business rules, and acceptance criteria.
 3. Inspect affected code and tests; report absent prerequisites accurately.
 4. Prepare a brief implementation plan and identify appropriate validation. Follow the [branch workflow](BRANCH.md): every implementation task uses an appropriate task branch.
@@ -43,19 +47,19 @@ Do not mark a task, requirement, test case, or milestone complete without implem
 - Follow the documented modular monolith and keep UI, services, persistence, and external adapters at their documented boundaries.
 - Keep financial calculations deterministic and independently testable. Supply dates/clocks explicitly where needed.
 - Use precise Python Decimal arithmetic for monetary calculations and exact integer minor units where documented. Binary floats must not enter authoritative calculations or financial persistence; chart conversions are presentation only.
-- Preserve transaction history, atomic writes, referential integrity, and recoverability. Review the proposed precision, rounding, correction, and replay mechanisms at their recorded gates rather than silently approving them.
-- Prevent double-counting of assets, transfers, opening holdings, and savings allocations. Goal reservations earmark existing cash and never increase total assets.
-- Keep Gemini and Telegram optional at runtime and isolated from core logic. They remain later complete-release deliverables under the existing plan.
+- Preserve observation/revision and snapshot history, atomic writes, ownership integrity and recoverability. Review precision, rounding, revision and replay mechanisms at their recorded gates rather than silently approving them.
+- Prevent double-counting of assets, opening values and movement annotations. Internal tracked-account movement creates no external contribution; a goal links whole accounts, adds no wealth and locks no funds. Missing movement/valuation evidence means unknown attribution, not invented performance.
+- Keep core financial calculations and persistence independent of SMTP and later Gemini. Emails contain no financial details; Gemini needs exact one-call consent. Telegram is deferred, not a release prerequisite.
 - Do not introduce unnecessary frameworks, services, infrastructure, or dependencies.
 
 ## Security Rules
 
 - Never commit API keys, credentials, personal financial records, databases, exports, or backups. Respect existing ignore rules and use synthetic fixtures.
 - Never send financial context to Gemini without explicit request-specific approval of the exact minimized payload and question. Changed payloads require new approval; approval permits one call. Do not log sensitive prompts or credentials.
-- Never expose Streamlit directly to the public internet. Default to loopback; trusted LAN access requires the documented network restrictions. Admitted devices have full access; do not imply an application login exists.
+- Keep the prototype and existing Streamlit shell on loopback with synthetic data. Release ingress requires the reviewed HTTPS Tunnel/private-origin topology and application authentication/authorization; never expose the database, CasaOS management UI or Docker socket through the application. No real users/sensitive data before the full release gate.
 - Never perform financial transactions automatically, including payments, trades, or investment actions. Manually recording financial events is governed by the documented validation and persistence rules.
-- Restrict Telegram delivery to the explicitly configured and validated private recipient and approved content/schedules. Initial Telegram behavior is notifications only: no inbound command processing, polling, or webhook.
-- Keep external integrations isolated from authoritative financial logic. Gemini output cannot execute SQL, invoke financial-write tools, or alter computed figures or records.
+- Restrict reminder email to the intended verified User address and approved schedule; no financial content, report attachments or bearer report access. Membership/reset tokens are separate single-use authentication workflows. Telegram remains deferred; no inbound bot interface is authorized.
+- Keep external integrations isolated from authoritative financial logic. Gemini output cannot execute SQL, invoke financial-write tools, alter computed figures/records or provide personalized security buy/sell recommendations.
 - Use fakes for integration tests. Live checks require explicit owner consent, synthetic payloads, and owner-supplied credentials; never use personal datasets or destinations by default.
 
 ## Agent Restrictions

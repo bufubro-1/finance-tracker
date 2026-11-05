@@ -1,187 +1,86 @@
-# Finance Tracker — Initial Relational Data Model
+# Finance Tracker — Savings and Wealth Data Model
 
-Status: **Proposed design only.** No tables, migrations, schema initialization, or database files are created by this document. DEC-018 authorizes TASK-001's runtime/configuration/startup and relevant documentation/test scope only, with execution explicitly held; it does not approve or authorize implementing this schema or other financial/integration features. Review DEC-010/011/014 and OQ-002 before implementing persistent semantics. See [SRS business rules](../requirements/SRS.md), [architecture](ARCHITECTURE.md), and [Decision Log](../DECISION_LOG.md).
+Status: Revised conceptual model pending human review; PostgreSQL remains unimplemented. Approved scope is observation-based (DEC-021), with no required detailed ledger, trade records or cash reservations. Exact limits, revision/replay mechanisms and deployment versions retain their gates.
 
-## 1. Representation and entity catalog
+## Representation and authoritative values
 
-Use SQLite INTEGER primary keys unless stated otherwise. Required attributes are non-null; optional attributes are explicitly marked nullable. IDs are dataset-local stable references, not externally meaningful identities. Store UTC creation/update instants as ISO 8601 text; financial effective dates are local `YYYY-MM-DD` text. Store one configured IANA reporting timezone for date/schedule interpretation.
+Use stable IDs and PostgreSQL relationships. Money uses signed-64-bit integer minor units with explicit currency/scale; cash and goal/flow amounts follow their nonnegative/positive rules. Quantities/prices use exact Decimal-compatible NUMERIC, with validation before any database scale coercion; the proposed 8-digit fractional cap and half-even/ceiling policy require OQ-002 review. Reject nonfinite and out-of-range input; never use floats for authoritative finance. Use native dates and UTC-aware recorded timestamps, interpreting effective financial dates in the User's timezone.
 
-Monetary amounts use signed 64-bit INTEGER **minor units** in the one dataset reporting currency. For scale 2, 12345 means 123.45. Persist the currency code and scale together at dataset creation; lock both after financial records exist. Reject excess fractional digits and overflow before SQLite writes. Production currency codes use an explicitly supported ISO 4217 set and its scale; a synthetic code used in tests is not accepted as a real currency.
+Initial prototype schema uses standard Django user/account/cash-observation models with disposable SQLite and synthetic fixtures. It is a reusable ORM subset, not evidence of PostgreSQL locking/precision/constraints or production suitability. TASK-003 extends the model and verifies PostgreSQL; no financial legacy data migration exists.
 
-Non-base-cash quantities and unit prices use canonical decimal TEXT, with a proposed maximum of 8 fractional digits and exact Python decimal parsing. Never use SQLite REAL/NUMERIC affinity or binary float for authoritative finance arithmetic. Per-holding multiplication uses exact decimals, rounds half-even once to minor units, and totals sum those rounded values. Required goal contributions round upward. Chart libraries may receive converted final values for display, never feed calculations back into persistence.
+## Entity catalog
 
-| Entity | Attributes and keys | Purpose / constraints |
+| Entity | Minimum conceptual attributes | Integrity / purpose |
 |---|---|---|
-| DATASET_SETTINGS | `id` PK fixed 1; `schema_version` INTEGER; `reporting_currency` TEXT; `minor_unit_scale` INTEGER; `timezone` TEXT; `stale_after_days` INTEGER; `revision` INTEGER; `created_at` TEXT | Singleton local dataset metadata, no credentials. Proposed initial stale threshold 7 days; supported minor-unit scales 0–4. Increment revision on financial/settings changes used by report caches. |
-| ACCOUNT | `id` PK; `name` TEXT; `name_key` TEXT UNIQUE; `archived_at` TEXT nullable; `created_at`, `updated_at` TEXT | Logical holding location. Application-normalized case-insensitive name key avoids SQLite's ASCII-only case-fold assumptions. Archive only at zero holdings/no active allocations. |
-| ASSET | `id` PK; `name` TEXT; `type` TEXT; `unit` TEXT; `quoted_currency` TEXT nullable; `is_base_cash` INTEGER; `archived_at` TEXT nullable; `created_at`, `updated_at` TEXT | Type in cash/currency/gold/stock/fund. Exactly one base-cash definition, price fixed at one and unit equal to reporting currency. Other currencies are ordinary manually priced assets; quoted currency is descriptive, not an FX instruction. |
-| FINANCIAL_TRANSACTION | `id` PK; `kind` TEXT; `effective_date` TEXT; `category` TEXT nullable; `note` TEXT nullable; `reason` TEXT nullable; `reversal_of_id` FK to same table nullable UNIQUE; `replacement_of_id` FK to same table nullable UNIQUE; `submission_key` TEXT nullable UNIQUE; `request_fingerprint` TEXT nullable; `created_at` TEXT | Kind in opening/income/expense/transfer/purchase/sale/adjustment/reversal. Category required for income/expense; reason required for adjustment/reversal. Reversal and replacement links preserve audit chains; a reversal cannot itself be edited as a financial event. DEC-016 proposes paired submission-key/fingerprint metadata; opening commands require both for durable replay protection, other event kinds may leave both null pending their workflow design. |
-| POSTING | `id` PK; `transaction_id` FK; `account_id` FK; `asset_id` FK; `cash_delta_minor` INTEGER nullable; `quantity_decimal` TEXT nullable | Exactly one value representation: base cash uses signed nonzero integer minor units; all other assets use signed nonzero canonical quantities. `UNIQUE(transaction_id, account_id, asset_id)`. No independently editable balance column. |
-| PRICE_OBSERVATION | `id` PK; `asset_id` FK; `effective_date` TEXT; `unit_price_decimal` TEXT; `supersedes_id` FK to same table nullable UNIQUE; `superseded_at` TEXT nullable; `created_at` TEXT | Positive finite reporting-currency unit price. No base-cash price rows. One active observation per asset/date; revisions preserve the original. Corrections may restate earlier charts. |
-| GOAL | `id` PK; `name` TEXT; `target_minor` INTEGER; `target_date` TEXT; `status` TEXT; `created_at`, `updated_at` TEXT | Positive target; status active/archived/deleted. No redundant stored progress percentage or contribution. A status change away from active releases allocations in the same transaction after confirmation. |
-| GOAL_ALLOCATION | `id` PK; `goal_id` FK; `account_id` FK; `amount_minor` INTEGER; `created_at` TEXT; `released_at` TEXT nullable | Positive base-cash reservation. One active row per goal/account. A partial release closes the row and creates the remaining active reservation atomically, preserving allocation history without promising historical goal charts. |
-| TELEGRAM_SETTINGS | `id` PK fixed 1; `private_chat_id` TEXT nullable; `validated_at` TEXT nullable; `confirmed_at` TEXT nullable; `enabled` INTEGER; `updated_at` TEXT | One private-chat allowlist. Store IDs as text to avoid cross-language precision loss. Bot token comes from environment only. Changing the destination clears confirmation and disables rules until reapproved. |
-| NOTIFICATION_RULE | `id` PK; `telegram_settings_id` FK; `goal_id` FK nullable; `kind` TEXT; `cadence` TEXT; `day_value` INTEGER; `local_time` TEXT; `timezone` TEXT; `approved_fields_json` TEXT; `approved_at` TEXT nullable; `enabled` INTEGER; `created_at`, `updated_at` TEXT | Kind summary/goal_reminder/goal_update; cadence weekly/monthly; day is weekday 1–7 or month day 1–28. Goal FK required for goal kinds, forbidden for summary. JSON is a small field-name allowlist validated by Python, not a query language. No schedule enabled by default. |
-| NOTIFICATION_DELIVERY | `id` PK; `rule_id` FK; `period_key` TEXT; `status` TEXT; `attempt_count` INTEGER; `claimed_at` TEXT; `next_attempt_at` TEXT nullable; `provider_message_id` TEXT nullable; `last_error_code` TEXT nullable; `completed_at` TEXT nullable | `UNIQUE(rule_id, period_key)`; status claimed/retry_pending/sent/failed/uncertain/skipped. Attempts bounded at three for automatic definite-failure retry. No message body, prompt, or token stored. |
+| APP_USER | Django user identity, normalized unique email, active/role flags, password hash; standard sessions and selected MFA storage remain framework-managed. | Admin/User is application policy; do not expose superuser capability. |
+| USER_SETTINGS | owner unique FK, reporting currency/scale, timezone, freshness settings, financial revision. | Currency locks after first financial record; per-user settings, not global dataset singleton. |
+| INVITATION | intended email, token hash, expiry, used/revoked timestamps, issuing Admin FK. | Single-use; no plaintext token in records/logs. |
+| ACCOUNT | id, owner FK, normalized name, savings/investment kind, archive time, version. | Name unique per owner; no authoritative independently editable investment-account total. |
+| ASSET | id, owner FK, name/type, declared unit, optional descriptive quoted currency. | Units with observations cannot silently change; no global cross-user instrument sharing required. |
+| UPDATE_BATCH | id, owner FK, submission key, immutable request fingerprint, recorded_at. | Unique owner/key; observations and movement annotations commit together. |
+| BALANCE_OBSERVATION | id, owner/account/batch FKs, nonnegative cash_minor, effective_date, recorded_at, supersedes FK, reason, version. | Base-currency cash within any account; latest eligible active revision supplies cash. Zero is valid. |
+| HOLDING_OBSERVATION | id, owner/account/asset/batch FKs, exact quantity, effective_date, recorded_at, supersedes FK, reason. | Non-cash quantities; zero closes a position; no trade journal is needed. |
+| PRICE_OBSERVATION | id, owner/asset FKs, exact positive unit price, effective_date, recorded_at, supersedes FK, reason. | Price is in owner reporting currency; preserve revisions and do not use future prices. |
+| SAVINGS_MOVEMENT | id, owner/batch FKs, effective_date, contribution/withdrawal/internal kind, positive amount_minor, optional source/destination account FKs. | External vs boundary of all tracked accounts; unknown in-kind amount prevents completeness, not an invented value. Amount is required for counted flow; an unknown flow can instead remain an unclassified update. |
+| MOVEMENT_CONFIRMATION | owner FK, start/end snapshot FKs, confirmed_at, coverage and source/movement revision binding. | Explicit all-external-movements declaration for the interval; never inferred from absence. Invalidate on affected revision/scope change. |
+| WEALTH_SNAPSHOT | id, owner FK, as_of_date, generated_at, currency/scale, calculation_version, revision_of FK, exact subtotal_minor, completeness flags. | Immutable snapshot header plus frozen coverage/source manifest; residual attribution stored only with valid confirmation. |
+| SNAPSHOT_LINE | snapshot/account/asset optional FKs, frozen quantity/price/value_minor, source IDs, observation dates, warnings. | Frozen values/provenance survive later edits; cash line has no noncash asset requirement. |
+| GOAL | id, owner FK, name, target_minor, target_date, active/closed status, timestamps. | Targets/progress do not create wealth; no reserved amount field. |
+| GOAL_ACCOUNT_LINK | id, owner/goal/account FKs, created_at, released_at. | Unique active link per account, including concurrent assignments; closure releases links atomically. |
+| FINANCIAL_PROFILE | owner unique FK, optional estimated monthly income_minor and expenses_minor, updated_at, reviewed_at. | No postings; explicit unchanged review refreshes reviewed_at; missing values remain missing. |
+| REPORT_SCHEDULE | id, owner FK, enabled, timezone, monthly day/time, reminder lead, revision, timestamps. | Proposed schedule policy at OQ-005; no enabled schedule by default. |
+| MONTHLY_REPORT | id, owner/schedule/wealth_snapshot FKs, period start/end, generated_at, revision_of FK, calculation_version, immutable exact summary/profile/goal values and warnings. | Owner-only retrieval; separate generation-time goal/profile values from period-end wealth. No public or bearer report link. |
+| JOB_OCCURRENCE | id, owner/schedule FKs, kind reminder/report, due instant, schedule revision, status, claim/completion timestamps. | Unique schedule/kind/revision/due occurrence; report idempotency and schedule edits need explicit OQ-005 handling. |
+| EMAIL_DELIVERY | id, occurrence FK, verified recipient reference, attempts/status, provider acknowledgement, sanitized error/times. | Generic templates only; no financial body, reset/invitation token or prompt retention. |
+| SECURITY_EVENT | id, actor FK optional, event kind, timestamp, sanitized target/account-lifecycle metadata. | No financial values/payloads; necessary membership/MFA/recovery operational audit only. |
 
-Holdings are derived aggregates per `(account_id, asset_id)` from postings; an ACCOUNT_ASSET or BALANCE table is unnecessary initially. Cash value is `sum(cash_delta_minor)`; other holdings sum exact parsed quantities in Python. Persisting a second balance would create another reconciliation obligation without Charter benefit.
+The catalog defines conceptual responsibilities, not generated migrations or final field signatures. Django/framework session/MFA tables are implementation details reviewed under OQ-010.
 
-## 2. Relationships and editable ER diagram
+## Ownership, revisions and concurrency
 
-An account and an asset each have zero or more postings. Every financial transaction has one or more postings; domain validation enforces the kind-specific number. A goal has zero or more allocations; each allocation references exactly one goal and account. A noncash asset has zero or more dated prices. Settings singletons are not user accounts.
+- All private entities carry owner context directly or through a mandatory owned parent. References among accounts, assets, batches, movements, goals, snapshots and reports must have the same owner. Enforce that relationship at the database boundary as well as services; a simple independent FK alone does not prove same-owner integrity. Review concrete composite constraints/migrations in TASK-003.
+- Maintain per-owner/account versions. A write checks expected version, locks relevant rows in deterministic order, validates and commits one batch plus replay key/fingerprint. Identical committed intent returns original result; key reuse with changed payload fails. Rolled-back keys do not consume the intent. Exact locking/replay policy is OQ-007.
+- Preserve observations via superseding revisions and reason; only one active revision of an observation and one eligible observation per owner/account/asset/effective date. Corrections cannot change owner, currency or unit meaning. Zero quantity closes a holding without erasing history. Account archive preserves history and changes comparison coverage.
+- At an as-of date, select only observations/prices effective on or before that date. Cash is counted once; investment-account total is derived from cash plus priced holdings. A reported aggregate account balance cannot be added to those holdings.
+- Coherent snapshot generation freezes its account coverage, values/source versions and flags in one read transaction. Saved snapshots/reports are immutable; originals and later revisions remain distinguishable. Missing history stays missing. Goal/profile generation-time information is labeled independently when no period-end version exists.
+- User movement confirmation binds the interval to immutable endpoints and applicable source/flow revisions. Missing classification, unknown valuation or changed coverage yields unknown attribution. A supported residual is never labeled investment profit or a return percentage.
+- One active GOAL_ACCOUNT_LINK per account is a database uniqueness rule, independent of target status. End links atomically when closing the goal. There is no financial cash lock or duplicated goal balance.
 
-The diagram lists representative keys and relationship fields; the catalog above defines all attributes. Self-links are optional per child record: a transaction may reverse/replace one original, and an original has at most one direct reversal and replacement. Price revisions use the same optional one-to-one chain rule.
+## Editable ER diagram
 
 ```mermaid
 erDiagram
-    DATASET_SETTINGS {
-        int id PK
-        int schema_version
-        string reporting_currency
-        int minor_unit_scale
-        string timezone
-        int revision
-    }
-    ACCOUNT {
-        int id PK
-        string name_key UK
-        string archived_at
-    }
-    ASSET {
-        int id PK
-        string type
-        string unit
-        int is_base_cash
-    }
-    FINANCIAL_TRANSACTION {
-        int id PK
-        string kind
-        string effective_date
-        int reversal_of_id FK, UK
-        int replacement_of_id FK, UK
-        string submission_key UK
-        string request_fingerprint
-    }
-    POSTING {
-        int id PK
-        int transaction_id FK
-        int account_id FK
-        int asset_id FK
-        int cash_delta_minor
-        string quantity_decimal
-    }
-    PRICE_OBSERVATION {
-        int id PK
-        int asset_id FK
-        string effective_date
-        string unit_price_decimal
-        int supersedes_id FK, UK
-        string superseded_at
-    }
-    GOAL {
-        int id PK
-        int target_minor
-        string target_date
-        string status
-    }
-    GOAL_ALLOCATION {
-        int id PK
-        int goal_id FK
-        int account_id FK
-        int amount_minor
-        string released_at
-    }
-    TELEGRAM_SETTINGS {
-        int id PK
-        string private_chat_id
-        int enabled
-    }
-    NOTIFICATION_RULE {
-        int id PK
-        int telegram_settings_id FK
-        int goal_id FK
-        string kind
-        string cadence
-        int enabled
-    }
-    NOTIFICATION_DELIVERY {
-        int id PK
-        int rule_id FK
-        string period_key
-        string status
-    }
-    FINANCIAL_TRANSACTION ||--|{ POSTING : contains
-    ACCOUNT ||--o{ POSTING : locates
-    ASSET ||--o{ POSTING : records
+    APP_USER ||--o| USER_SETTINGS : configures
+    APP_USER ||--o{ INVITATION : issues_as_admin
+    APP_USER ||--o{ ACCOUNT : owns
+    APP_USER ||--o{ ASSET : defines
+    APP_USER ||--o{ UPDATE_BATCH : submits
+    UPDATE_BATCH ||--o{ BALANCE_OBSERVATION : records
+    UPDATE_BATCH ||--o{ HOLDING_OBSERVATION : records
+    UPDATE_BATCH ||--o{ SAVINGS_MOVEMENT : explains
+    ACCOUNT ||--o{ BALANCE_OBSERVATION : has
+    ACCOUNT ||--o{ HOLDING_OBSERVATION : has
+    ASSET ||--o{ HOLDING_OBSERVATION : identifies
     ASSET ||--o{ PRICE_OBSERVATION : values
-    FINANCIAL_TRANSACTION o|--o| FINANCIAL_TRANSACTION : reverses
-    FINANCIAL_TRANSACTION o|--o| FINANCIAL_TRANSACTION : replaces
-    PRICE_OBSERVATION o|--o| PRICE_OBSERVATION : supersedes
-    GOAL ||--o{ GOAL_ALLOCATION : reserves
-    ACCOUNT ||--o{ GOAL_ALLOCATION : supplies
-    TELEGRAM_SETTINGS ||--o{ NOTIFICATION_RULE : authorizes
-    GOAL o|--o{ NOTIFICATION_RULE : informs
-    NOTIFICATION_RULE ||--o{ NOTIFICATION_DELIVERY : schedules
+    APP_USER ||--o{ WEALTH_SNAPSHOT : owns
+    WEALTH_SNAPSHOT ||--o{ SNAPSHOT_LINE : freezes
+    WEALTH_SNAPSHOT ||--o{ MOVEMENT_CONFIRMATION : bounds
+    APP_USER ||--o{ GOAL : owns
+    GOAL ||--o{ GOAL_ACCOUNT_LINK : tracks
+    ACCOUNT ||--o{ GOAL_ACCOUNT_LINK : funds_over_time
+    APP_USER ||--o| FINANCIAL_PROFILE : reviews
+    APP_USER ||--o{ REPORT_SCHEDULE : chooses
+    REPORT_SCHEDULE ||--o{ MONTHLY_REPORT : generates
+    WEALTH_SNAPSHOT ||--o{ MONTHLY_REPORT : supports
+    REPORT_SCHEDULE ||--o{ JOB_OCCURRENCE : claims
+    JOB_OCCURRENCE ||--o{ EMAIL_DELIVERY : attempts
+    APP_USER o|--o{ SECURITY_EVENT : acts
 ```
 
-DATASET_SETTINGS is intentionally standalone: its reporting currency applies to the whole dataset rather than through repeated currency foreign keys. Self-link acyclicity and valid reversal/revision targets require application validation in addition to FKs. Mermaid notation reference: [official ER documentation](https://mermaid.js.org/syntax/entityRelationshipDiagram.html). Source review is not renderer validation.
+Relationships shown are representative; catalog/service rules additionally constrain ownership, revision chains, source/destination movements and the two confirmation endpoints. No diagram relationship grants Admin financial access. Revisions cannot cycle.
 
-## 3. Constraints, atomicity, and transaction history
+## Historical model and recovery
 
-### Declarative constraints and indexes
+The earlier DATASET_SETTINGS singleton becomes per-user settings. FINANCIAL_TRANSACTION and POSTING remain deferred ledger proposals; GOAL_ALLOCATION remains a deferred reservation proposal. TELEGRAM_SETTINGS/NOTIFICATION_RULE/NOTIFICATION_DELIVERY are deferred Telegram entities, not aliases for new report/email tables. Their original definitions are retained in Git baseline `5052b5b`; no such deployed tables or migrations need conversion.
 
-- Enable `PRAGMA foreign_keys = ON` for every connection and use parameterized statements. Use NOT NULL, enum-like CHECK constraints, positive integer checks, the posting representation XOR, and FKs with RESTRICT deletion. Never cascade-delete posted financial history.
-- Enforce singleton IDs and at most one base-cash asset with uniqueness constraints/partial indexes. Initialization creates the required base-cash definition; application validation prevents deleting, archiving, or changing it, maintaining exactly one. Index postings by `(account_id, asset_id, transaction_id)` and `transaction_id`; transactions by `(effective_date, id)` and `(kind, effective_date)`.
-- Use an active unique price index on `(asset_id, effective_date)` where `superseded_at IS NULL`, plus a price lookup index on `(asset_id, effective_date)`. Superseding a price updates its superseded marker and inserts the new row together.
-- Use an active unique allocation index on `(goal_id, account_id)` where `released_at IS NULL`; index active account allocations for reservation checks. Index goal status/date, enabled rules, and delivery status/next-attempt time. The delivery `(rule_id, period_key)` unique key is the duplicate-claim guard.
-- SQLite cannot enforce aggregate cash availability or all decimal-string semantics with simple CHECK constraints. Validate these centrally in domain services and enforce the same service path for every entry point; do not imply that an FK alone prevents overspending.
-
-### Transaction-kind rules
-
-| Kind | Posting shape and reporting classification |
-|---|---|
-| Opening / adjustment | One or more explicit asset/cash deltas with provenance; adjustment reason required. Neither is income or expense. |
-| Income | One positive base-cash posting; required category. Included once in income. |
-| Expense | One negative base-cash posting; required category. Included once in expenses as a positive reported amount. |
-| Transfer | Two opposite base-cash postings in different accounts, equal absolute amounts; excluded from cash-flow income/expense. |
-| Purchase / sale | One noncash quantity posting plus one opposite base-cash settlement posting in the same account; a cross-account settlement requires a separate transfer. No implicit fee duplication or income classification. |
-| Reversal | Exact negation of all original postings, same original effective date, one reversal per effective original. Reporting uses the original event kind and signed reversal amounts, so totals cancel instead of becoming new income. |
-
-Correcting an effective event inserts its reversal and an optional replacement with a link to that original. The replacement is a new effective event that can later be corrected through its own chain. Deletion inserts a reversal only. Old postings remain immutable; reports sum originals, reversals, and replacements exactly once. A previously reversed event cannot be reversed again; linked cycles are forbidden. Correcting notes/categories uses the same mechanism so no silently mutable financial history is implied.
-
-Validate nonnegative end-of-day holdings across all affected dates and current balances after any backdated operation. Also validate current active goal reservations against resulting base cash; past allocation balances are not used as a time-series constraint. This prevents a backdated edit from silently creating an impossible historical holding or spending today's reserved savings.
-
-For allocation changes and cash debits, begin one short write transaction (proposed `BEGIN IMMEDIATE`), read balances/active reservations, validate, then write and commit. A competing writer must wait briefly or fail with a retryable message, never calculate availability outside the write transaction and commit blindly. Proposed lock wait: at most 5 seconds; no unbounded retry loop. Do not perform API calls while holding this lock.
-
-### First-dashboard opening integrity and proposed replay mechanism
-
-M-001A uses the same schema/repository boundary as the complete core. A create/list-only UI registers existing holdings, not a purchase: persist the new definition when needed, opening transaction/posting, optional initial price, and replay guard in **one** write transaction. Read quantities from postings; no separate editable balance is introduced. Base cash keeps its fixed unit/price. UI asset-unit edits are unavailable at this milestone; the policy for later referenced-unit edits remains OQ-002.
-
-DEC-016 proposes a unique `submission_key` plus an immutable server-computed canonical-request fingerprint on FINANCIAL_TRANSACTION. Require both or neither in storage; require both for opening commands. A matching committed key/fingerprint returns the original result without a new write; a mismatched fingerprint rejects. Validate/query the key and write the opening inside the same unit of work; database uniqueness prevents racing replays. The key is stable for a retry/rerun and replaced only for an explicitly new intent, not inferred from equal amounts. A rollback removes all rows and leaves the failed command retryable. No new table or external service is needed; this is a proposal awaiting OQ-007 review, not an implemented schema.
-
-TC-051 tests sequential/concurrent/restarted replays and conflicting payloads; TC-052 exercises the complete small dashboard. M-001A backup/restore preserves financial/history and replay metadata so restoring an accepted submission does not remove its duplicate guard. Restoring an older snapshot still returns to that snapshot's recovery point, not a promise to retain later commands. Essential restore validation, stopped writers and a pre-restore backup are required at the early gate; the procedure must not be reduced to raw live-file copying.
-
-### Allocation example
-
-Cash in account A is 1000. Goal G1 reserves 700 and G2 reserves 200, leaving 100 available. A 150 expense, 150 transfer, or 150 trade settlement is rejected until the user releases at least 50. Moving 100 between goals releases and reserves in one transaction, so no intermediate state can duplicate funds. Goal totals are views of the reservations and never additional holdings.
-
-## 4. SQLite and operational considerations
-
-Use local disk with the default rollback-journal mode initially; this workload does not justify assuming WAL. Leave durable synchronization enabled. A future measured read-contention problem can justify WAL in a separate decision, with corresponding backup/restore changes. Do not put the dataset on a network share or assume a copied live database file is a consistent backup.
-
-Create consistent backups through the [SQLite backup mechanism](https://www.sqlite.org/backup.html), then validate the completed destination. Restore only a supported schema/version, after integrity, foreign-key, decimal, and financial-invariant checks. Stop UI/runner writers, retain a safety snapshot, replace safely, and verify reopening before resuming. Schema version checks are planned; actual migrations are not created here. Credentials must be supplied again from the environment, not recovered from a database/export.
-
-CSV export should include headers, stable IDs, reporting currency/scale, exact values, and a small manifest describing selected record groups and date range. Include transactions/postings, accounts/assets, prices, goals, and allocations needed to interpret exported data. Neutralize text beginning with spreadsheet formula characters and document that transformation; CSV is not a lossless disaster-recovery backup or a supported import path.
-
-Delivery rules retain local timezone and approved fields. A rule edit disables/reapproves content as needed and prevents a claimed-but-unsent stale configuration from sending without revalidation. Period keys include the rule ID and local due instant/period so repeated scheduler invocation claims only one occurrence. On restore, automatically disable notification rules and clear destination confirmation: an older backup can lack recent delivery acknowledgements, so re-enabling requires recipient/content review to avoid silent duplicate reports.
-
-## 5. Decision status and remaining confirmations
-
-- Runtime selection is approved by DEC-017: current Linux environment, Python 3.14.x with locally installed 3.14.8 as the initial target, venv, pip, and pytest. OQ-004's selection is resolved; dependency compatibility and exact compatible dependency versions remain unverified TASK-001 work. Report incompatibilities rather than silently changing Python or architecture. DEC-018's limited authorization leaves OQ-001 open for the remaining baseline; TASK-001 remains Not Started.
-- Exact precision cap, rounding policy, same-account trade settlement, correction/reversal rules, restated history and referenced-unit edit restrictions: DEC-010/011, OQ-002.
-- Persistent opening-submission replay fields/guard: proposed DEC-016, OQ-007, before TASK-003/005A; duplicate prevention itself is approved under DEC-015.
-- Stale threshold: DEC-012, OQ-003.
-- Notification recurrence, missed/uncertain delivery policy, and restore-time disablement: DEC-013, OQ-005.
-- Backup location/cadence/retention and recovery targets: DEC-014, OQ-006.
-
-The confirmed product choices remain one reporting currency, assets only, base-cash goal reservations, per-request AI approval, network-controlled access, and notifications-only Telegram. Technical proposals must not be mistaken for additional approved scope.
+PostgreSQL backup/restore is operator-only, consistent and candidate-validated; CSV is User-only portability with exact values/formula neutralization. A restored snapshot preserves ownership, revision/replay and report provenance. Before resumption revoke sessions/tokens as appropriate and pause jobs to reconcile invitation/reset and delivery state; secrets remain externally supplied. Location/cadence/retention/RPO/RTO and physical storage are unresolved operating gates, not implemented controls.
