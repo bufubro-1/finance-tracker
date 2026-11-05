@@ -1,6 +1,6 @@
 # Finance Tracker — Requirements Traceability Matrix
 
-Status: Planned revised coverage. Only TASK-001 has historical accepted implementation evidence at `5052b5b`; it does not satisfy new Django/PostgreSQL behavior. New tasks are Not Started; revised cases Planned — Not Executed. Current IDs link across the approved scope; retired concepts retain explicit history instead of being recycled.
+Status: M-009 has accepted scoped implementation evidence; see the [closure record](../testing/M-009_CLOSURE.md). P1-01–P1-06 and TC-053 are accepted for the synthetic prototype; TC-039 has prototype usability evidence only. Broad FR/NFR mappings and unimplemented release scenarios remain planned/partial. TASK-001 retains its separate historical acceptance; retired identifiers retain their history.
 
 ## Functional coverage
 

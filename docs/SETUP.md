@@ -6,7 +6,7 @@
 
 **Accepted authentication:** TASK-025A's dedicated synthetic provisioning and standard Django login/logout are integrated at `d27f06b`.
 
-**TASK-004A1, prepared for human review:** the isolated task worktree adds owned savings accounts, exact synthetic USD openings, cards and Dashboard totals. Its implementation and complete M-009 owner demonstration await human acceptance; this is not a production application.
+**M-009 completed and owner-accepted:** TASK-004A1 is integrated at `6c937a6`, completing the accepted local synthetic prototype. See the [closure record](testing/M-009_CLOSURE.md). The task-worktree instructions below are retained as implementation/review history; the same prototype entrypoint is present in accepted local main. This is not production readiness.
 
 **Intended later release environment:** Raspberry Pi 5 (8 GB), CasaOS, Docker Compose, PostgreSQL and Cloudflare Tunnel with HTTPS. TASK-024 verifies ARM64/runtime/OS/image/Compose compatibility; TASK-020 separately implements/rehearses authorized deployment and recovery. No Dockerfile, Compose configuration, release PostgreSQL database, CI workflow, tunnel or CasaOS setup is created by this task. Existing x86_64/Python 3.14.8 evidence does not establish that environment's compatibility.
 

@@ -1,6 +1,6 @@
 # Finance Tracker — Test Plan
 
-Status: Revised cases are **Planned — Not Executed** unless explicitly marked deferred/superseded. Historical TASK-001 has separate recorded evidence below; no application tests were rerun in this documentation revision. A case mapping does not establish implementation, execution or owner acceptance.
+Status: Cases remain Planned — Not Executed except the explicitly recorded historical/scoped evidence and deferred/superseded cases. M-009 is Completed — Accepted; see [closure evidence](M-009_CLOSURE.md). No application tests were rerun for this closure documentation. A mapping alone establishes neither execution nor acceptance.
 
 ## Strategy, environments and fixtures
 
@@ -342,7 +342,7 @@ The runtime tests cover original setup subsets of TC-001/002/037/038/041/044. Re
 - **Requirements:** FR-003, FR-037, NFR-004.
 - **Setup and steps:** Owner follows visible navigation and labels to sign in, create a synthetic account and find its balance on a desktop and narrow viewport.
 - **Expected result:** Clean readable cards, visible currency/value, clear active navigation, labeled intuitive form, preserved input and understandable errors/empty/success states; no horizontal clipping of essential controls.
-- **Status:** Planned — Not Executed.
+- **Status:** Prototype usability subset passed and owner-accepted at `6c937a6`; broader release scenarios remain Planned — Not Executed. See [closure evidence](M-009_CLOSURE.md).
 
 ### TC-040 — Atomic update and restart
 
@@ -454,7 +454,7 @@ The runtime tests cover original setup subsets of TC-001/002/037/038/041/044. Re
 - **Requirements:** FR-001, FR-003, FR-034, FR-037, NFR-004, NFR-001.
 - **Setup and steps:** Start on loopback without PostgreSQL/cloud credentials; sign in with synthetic identity, navigate, create a savings account, view cards/total, validate an error, log out and restart.
 - **Expected result:** All P1-01 through P1-06 checks have evidence and owner demo. Synthetic records persist; anonymous access fails; no external calls; clean usable layout.
-- **Status:** Planned — Not Executed.
+- **Status:** Passed — Owner Accepted for P1-01–P1-06 at `6c937a6`; synthetic local prototype only. See [closure evidence](M-009_CLOSURE.md).
 
 ### TC-054 — Invitation lifecycle
 

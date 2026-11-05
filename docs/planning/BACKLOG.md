@@ -1,6 +1,6 @@
 # Finance Tracker — Development Backlog
 
-Status: Owner-approved remaining development planning baseline (DEC-025); revised task specifications pending human review. TASK-001 alone is Completed — Accepted and Integrated. Every other MVP/later leaf is Not Started; retired ledger/Telegram leaves are Deferred or Superseded, never completed. This documentation request has no task ID and does not start the next application task.
+Status: Owner-approved DEC-025 planning baseline. TASK-001, TASK-022A, TASK-025A and TASK-004A1 are Completed — Accepted and Integrated within their recorded scopes. M-009 is Completed — Accepted; see the [M-009 closure record](../testing/M-009_CLOSURE.md). Only the three M-009 leaves gain completion status in this closure. Outside M-009, status/evidence fields below retain their historical baseline wording; they are not a current assertion that accepted TASK-022B is unimplemented. TASK-022B is already accepted/integrated in current main at `a338168`; its separate status reconciliation and parent-rollup bookkeeping are outside this milestone-only change. Deferred/superseded work is not completed.
 
 ## Baseline and prototype allocation
 
@@ -25,34 +25,37 @@ The first three executable leaves are TASK-022A -> TASK-025A -> TASK-004A1. Full
 - **Acceptance/evidence:** Commit `5052b5b` integrates accepted source `475492a`; its record states 58 pytest passes and successful pip check on Linux x86_64/Python 3.14.8. Not rerun in this documentation change. Existing package/configuration/Streamlit shell remains unchanged; no Django/financial/Pi acceptance is inferred.
 - **Validation limitations:** Fresh host, physical LAN checks and new browser acceptance were not run for that integration. Replacing the shell is separate authorized work; do not reopen TASK-001 or count it twice.
 
-## Remaining MVP executable leaves
+## MVP executable leaves
 
 ### TASK-022A — Prototype Django shell and dashboard
 
-- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **Type / priority / status:** Executable leaf / Must / Completed — Accepted and Integrated.
 - **WBS / estimate:** 1.4.1 / 8 h, focused tests and notes included.
 - **Dependencies:** TASK-001.
 - **Related requirements:** FR-001, FR-032, NFR-001, NFR-004; applicable tests in RTM.
 - **Acceptance criteria:** Local Django package, final user-model foundation, Dashboard/Accounts navigation, clean template layout, readable account cards and synthetic-data banner work on loopback. No SPA/frontend framework or deployment. Include startup and navigation checks.
 - **Decision gates:** None.
+- **Accepted evidence:** Local main integration `18c1066`; see the [M-009 closure record](../testing/M-009_CLOSURE.md) for scoped verification and owner acceptance.
 
 ### TASK-025A — Prototype standard Django authentication
 
-- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **Type / priority / status:** Executable leaf / Must / Completed — Accepted and Integrated.
 - **WBS / estimate:** 1.7.1 / 4 h, focused tests and notes included.
 - **Dependencies:** TASK-022A.
 - **Related requirements:** FR-034; applicable tests in RTM.
 - **Acceptance criteria:** Locally provisioned synthetic identity can log in/out using Django hashing, sessions and CSRF; protected pages reject anonymous access. No public signup, invitation emails or claim of production security.
 - **Decision gates:** None.
+- **Accepted evidence:** Local main integration `d27f06b`; see the [M-009 closure record](../testing/M-009_CLOSURE.md) for scoped verification and owner acceptance.
 
 ### TASK-004A1 — Prototype account creation and balances
 
-- **Type / priority / status:** Executable leaf / Must / Not Started.
+- **Type / priority / status:** Executable leaf / Must / Completed — Accepted and Integrated.
 - **WBS / estimate:** 2.1.1.1 / 4 h, focused tests and notes included.
 - **Dependencies:** TASK-025A.
 - **Related requirements:** FR-003, FR-037, NFR-004, NFR-012 (prototype input subset only), TC-039, TC-053; applicable tests in RTM.
 - **Acceptance criteria:** An intuitive form creates an owned savings account with exact nonnegative synthetic opening balance and clear currency; cards show the saved balance and total. Valid input survives errors; empty state explains next action. Refresh/restart retains records; owner demonstrates the complete path.
 - **Decision gates:** None.
+- **Accepted evidence:** Local main integration `6c937a6`; see the [M-009 closure record](../testing/M-009_CLOSURE.md) for scoped verification and owner acceptance.
 
 ### TASK-022B — Complete Django configuration and boundaries
 
@@ -350,6 +353,6 @@ Original task descriptions/estimates remain in baseline `5052b5b`. No original I
 
 Telegram remains deferred under TASK-016/017/018; detailed ledgers, expense categorization, advanced trades and cash reservations remain deferred under their original IDs. None is a hidden MVP dependency. Use the [schedule](PROJECT_SCHEDULE.md) for serial order/milestones and [RTM](../requirements/RTM.md) for requirement coverage.
 
-## Next eligible preparation
+## Closure boundary
 
-After this documentation revision is human-reviewed, TASK-022A is the next leaf to prepare, not automatically implement. Resolve only its applicable gates; do not force the entire secure foundation before a synthetic prototype. Its completion does not authorize TASK-025A or any other task. Financial policies, identity lifecycle and deployment gates remain at their recorded tasks.
+M-009 closes only its accepted synthetic prototype scope. Current main already includes separately accepted TASK-022B at `a338168`; this closure does not re-accept or newly complete it, change parent rollups, select/start another task or authorize Git/deployment operations. Later financial, identity, PostgreSQL, recovery and release decisions remain at their recorded gates.

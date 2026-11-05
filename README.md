@@ -4,7 +4,7 @@ Finance Tracker helps a small invited group track savings, current wealth, inves
 
 The approved MVP includes balances/holdings, optional savings contributions and withdrawals, valuation/history, account-linked goals, an optional estimated income/expense profile and private monthly reports with generic reminder emails. Detailed expense/trade ledgers and cash reservations are deferred. Unsupported performance attribution is shown as unknown.
 
-The first planned Django prototype is a local synthetic-data application with clear navigation, readable account cards and an intuitive account form. Its 16 hours are included in the 264-hour remaining development planning baseline.
+The accepted M-009 Django prototype is a local synthetic-data application with clear navigation, readable account cards and an intuitive account form. Its 16 hours are included in the approved 264-hour development planning baseline.
 
 **Implemented and accepted:** TASK-001 supplies a minimal Streamlit runtime/configuration shell and focused tests. Its launcher remains unchanged.
 
@@ -12,7 +12,7 @@ The first planned Django prototype is a local synthetic-data application with cl
 
 **Implemented and accepted:** TASK-025A's synthetic user provisioning, standard Django login/logout, sessions, CSRF and protected pages are integrated into local main at `d27f06b`. Its earlier review report records the pre-acceptance snapshot.
 
-**TASK-004A1, prepared for human review:** the isolated task worktree adds owned savings accounts, exact synthetic USD opening balances, saved cards and Dashboard totals in disposable SQLite. Openings are starting positions, not savings contributions. Follow [local setup](docs/SETUP.md) and the [TASK-004A1 review report](docs/testing/TASK-004A1_REVIEW.md) for verification and limitations. Use synthetic data only, on loopback. This implementation is not yet accepted or integrated.
+**M-009 completed and owner-accepted:** TASK-004A1 is integrated into local main at `6c937a6`, following accepted TASK-022A/025A. Owned synthetic USD openings, cards and Dashboard totals use disposable SQLite. Openings are starting positions, not contributions. See [closure evidence](docs/testing/M-009_CLOSURE.md) and [local setup](docs/SETUP.md). Keep the prototype synthetic and loopback-only; this is not production readiness.
 
 The owner-requested interface revision uses Turkish pages, forms and errors, with an accessible **Koyu tema** switch on every page. Theme choice is stored in the browser; first use follows the system preference. The Turkish interface-language rule is recorded in [AGENTS.md](AGENTS.md).
 

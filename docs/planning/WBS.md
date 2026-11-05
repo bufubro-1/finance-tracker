@@ -1,6 +1,6 @@
 # Finance Tracker — Work Breakdown Structure
 
-Status: Approved 264-hour remaining planning baseline; deliverables Not Started except accepted historical TASK-001. WBS leaf budgets include focused tests and notes. Parent/rollup rows are non-additive; completed/deferred/later work is excluded from the MVP total.
+Status: Approved 264-hour remaining planning baseline; TASK-001 retains historical acceptance and this closure records the three M-009 leaves as accepted/integrated. Other status/evidence fields retain their baseline snapshots; separately accepted TASK-022B is already integrated in current main at `a338168`. This closure changes no other deliverable/parent status. WBS leaf budgets include focused tests and notes. Parent/rollup rows are non-additive; completed/deferred/later work is excluded from the MVP total.
 
 ## Package accounting
 
@@ -17,7 +17,7 @@ Status: Approved 264-hour remaining planning baseline; deliverables Not Started 
 | System verification | TASK-019 | 24 |
 | Deployment rehearsal and release documentation | TASK-020, TASK-021 | 36 |
 
-Total: **264 h**, including M-009's **8+4+4=16 h** from existing packages. The remaining portion is 248 h; no separate prototype budget is added. TASK-001's historical 4 h estimate and later Gemini's 24 h are not counted. The earlier seven-phase 152-hour baseline is superseded under DEC-025 and remains historical, not a concurrent budget.
+Total: **264 h**, including M-009's **8+4+4=16 h** from existing packages. The original allocation after M-009 is 248 h, including TASK-022B's subsequently accepted 8 h; this is not current remaining effort; no separate prototype budget is added. TASK-001's historical 4 h estimate and later Gemini's 24 h are not counted. The earlier seven-phase 152-hour baseline is superseded under DEC-025 and remains historical, not a concurrent budget.
 
 ## Executable deliverables
 
@@ -26,21 +26,21 @@ Total: **264 h**, including M-009's **8+4+4=16 h** from existing packages. The r
 - **Backlog / effort:** TASK-022A; 8 h.
 - **Deliverable / Definition of Done:** Local Django package, final user-model foundation, Dashboard/Accounts navigation, clean template layout, readable account cards and synthetic-data banner work on loopback. No SPA/frontend framework or deployment. Include startup and navigation checks.
 - **Dependencies:** TASK-001; decision gates None.
-- **Evidence:** Applicable requirement/test links in the backlog and RTM; no execution or acceptance claimed.
+- **Status / evidence:** Completed — Accepted and Integrated; see the [M-009 closure record](../testing/M-009_CLOSURE.md).
 
 ### 1.7.1 — Prototype standard Django authentication
 
 - **Backlog / effort:** TASK-025A; 4 h.
 - **Deliverable / Definition of Done:** Locally provisioned synthetic identity can log in/out using Django hashing, sessions and CSRF; protected pages reject anonymous access. No public signup, invitation emails or claim of production security.
 - **Dependencies:** TASK-022A; decision gates None.
-- **Evidence:** Applicable requirement/test links in the backlog and RTM; no execution or acceptance claimed.
+- **Status / evidence:** Completed — Accepted and Integrated; see the [M-009 closure record](../testing/M-009_CLOSURE.md).
 
 ### 2.1.1.1 — Prototype account creation and balances
 
 - **Backlog / effort:** TASK-004A1; 4 h.
 - **Deliverable / Definition of Done:** An intuitive form creates an owned savings account with exact nonnegative synthetic opening balance and clear currency; cards show the saved balance and total. Valid input survives errors; empty state explains next action. Refresh/restart retains records; owner demonstrates the complete path.
 - **Dependencies:** TASK-025A; decision gates None.
-- **Evidence:** Applicable requirement/test links in the backlog and RTM; no execution or acceptance claimed.
+- **Status / evidence:** Completed — Accepted and Integrated; see the [M-009 closure record](../testing/M-009_CLOSURE.md).
 
 ### 1.4.2 — Complete Django configuration and boundaries
 

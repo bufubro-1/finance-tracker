@@ -25,6 +25,8 @@ Status: Savings and Wealth MVP scope, prototype strategy, intended deployment an
 
 ## Current state and release boundary
 
+**Current acceptance update:** M-009 is Completed — Accepted on prototype revision `6c937a6`; the closure proposal is prepared against current main `a338168`, which also includes separately accepted TASK-022B and its recorded 221 passing regressions. See the [closure record](testing/M-009_CLOSURE.md). Earlier documentation-revision and task-review narratives are retained as historical snapshots; their implementation/status statements are superseded by these acceptance records. Release security, PostgreSQL, backup/recovery, deployment and real-user admission remain open.
+
 Only TASK-001 is accepted/integrated: `5052b5b` records accepted `475492a`, 58 pytest passes and successful pip check on Linux x86_64/Python 3.14.8. These historical results were not rerun during this documentation revision. The unchanged current application is a Streamlit runtime/configuration shell, not a Django or financial application. No schema/migration, intended-host support, infrastructure, CI or deployment is claimed.
 
 M-009 delivers a clean usable local Django slice at 16 remaining hours: Dashboard/Accounts navigation, readable cards, intuitive account form, standard development authentication and disposable synthetic SQLite. Its 8+4+4 hours are reused from existing packages. All intermediate work remains synthetic; full authentication, authorization, Admin MFA, privacy, PostgreSQL integrity, recovery and release/deployment verification precede real users or sensitive data at M-007.

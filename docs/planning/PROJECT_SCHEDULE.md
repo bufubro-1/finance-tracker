@@ -1,6 +1,6 @@
 # Finance Tracker — Project Schedule
 
-Status: **Owner-approved planning baseline DEC-025**, documented 2026-11-05: **264 remaining development hours / 33 weeks at 8 hours/week**, including a **16-hour Early Working Prototype**. No calendar start/deadline is approved. Revised document acceptance remains pending human review; no future task/milestone is completed. Existing TASK-001 acceptance is historical and excluded from remaining effort.
+Status: **Owner-approved planning baseline DEC-025**, documented 2026-11-05: **264 remaining development hours / 33 weeks at 8 hours/week**, including a **16-hour Early Working Prototype**. No calendar start/deadline is approved. M-009 is Completed — Accepted; all later milestones remain incomplete. See the [M-009 closure record](../testing/M-009_CLOSURE.md). The approved 264-hour baseline is preserved: 16 hours allocated to accepted prototype leaves and 248 hours originally allocated after M-009, including TASK-022B's separately accepted 8 hours at current main `a338168`. These are baseline allocations, not current remaining or measured actual effort. Existing TASK-001 acceptance is historical and excluded from remaining effort.
 
 Intended later deployment: Raspberry Pi 5 (8 GB), CasaOS, Docker Compose and Cloudflare Tunnel with HTTPS. Compatibility assessment and authorized infrastructure/recovery rehearsal remain TASK-024/020 work, after the early local prototype.
 
