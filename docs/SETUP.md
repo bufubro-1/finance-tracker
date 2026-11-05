@@ -4,13 +4,15 @@
 
 **Accepted Django foundation:** TASK-022A is integrated at `18c1066`. It supplies Dashboard/Accounts navigation, synthetic sample cards, a development banner and the custom email user model.
 
-**TASK-025A, prepared for human review:** dedicated synthetic provisioning and standard Django login/logout now protect Dashboard and Accounts. Account creation and exact cash observations remain TASK-004A1. This is partial M-009 coverage, not an accepted complete prototype or production application.
+**Accepted authentication:** TASK-025A's dedicated synthetic provisioning and standard Django login/logout are integrated at `d27f06b`.
+
+**TASK-004A1, prepared for human review:** the isolated task worktree adds owned savings accounts, exact synthetic USD openings, cards and Dashboard totals. Its implementation and complete M-009 owner demonstration await human acceptance; this is not a production application.
 
 **Intended later release environment:** Raspberry Pi 5 (8 GB), CasaOS, Docker Compose, PostgreSQL and Cloudflare Tunnel with HTTPS. TASK-024 verifies ARM64/runtime/OS/image/Compose compatibility; TASK-020 separately implements/rehearses authorized deployment and recovery. No Dockerfile, Compose configuration, release PostgreSQL database, CI workflow, tunnel or CasaOS setup is created by this task. Existing x86_64/Python 3.14.8 evidence does not establish that environment's compatibility.
 
 All intermediate work uses synthetic data. Full authentication, ownership authorization, Admin MFA, privacy, recovery and release verification precede real users or sensitive data. See [approved schedule](planning/PROJECT_SCHEDULE.md) and [Decision Log](DECISION_LOG.md). Python 3.14.x development selection remains approved; version/image choices for the intended host remain a recorded gate.
 
-## TASK-025A local Django prototype (Bash)
+## TASK-004A1 local Django prototype (Bash)
 
 From the task worktree, create and install the Python 3.14 environment with the
 same venv/pip setup commands in the existing instructions below. The updated
@@ -33,7 +35,7 @@ python -m django provision_prototype_user
 python -m finance_tracker.django_app
 ```
 
-Run these commands from the TASK-025A worktree, not the TASK-001 checkout.
+Run these commands from the TASK-004A1 worktree, not the TASK-001 checkout.
 The database is `data/prototype.sqlite3` relative to that worktree; it is
 gitignored, disposable and strictly synthetic. Never use the TASK-001 database.
 
@@ -64,8 +66,8 @@ directory. It must be a local file in an existing owner-owned private directory
 (0700); an existing file must be owner-owned and private (0600). The configured
 legacy database path is rejected if it resolves to the same file path. No legacy
 configuration is changed. Path validation creates nothing; explicit `migrate`
-creates only the synthetic identity/session schema. Startup does not run migrations
-or provision identities. Keep the signing key local and out of Git; regenerating
+creates the synthetic identity/session and account/opening schema. Startup does
+not run migrations or provision identities. Keep the signing key local and out of Git; regenerating
 it invalidates existing authentication sessions. Keep the same key when checking
 session persistence across server restarts. Do not enter real identities or records.
 
@@ -77,8 +79,56 @@ are not enabled for this loopback HTTP prototype; HTTPS/proxy/cookie policy,
 throttling, membership, recovery, Admin MFA and full authorization/privacy remain
 release work. The development login is not production security acceptance.
 
-The Accounts card is a fixed **Example Savings / USD / 1,000.00** illustration,
-not an ORM account or a computed total. No financial models or data exist yet.
+Open **Hesaplar → Birikim hesabı oluştur**, enter a unique synthetic name, explicitly
+select **USD**, and enter an opening balance such as `1000.00`. Save to view the
+owned account card and its exact balance; **Genel Bakış** shows the total of your saved
+openings. Empty pages guide you to create the first account. Invalid fields explain
+the problem and keep your entries. The collapsed illustrative card preview remains
+**not saved** and never counts toward totals.
+
+The application interface and validation/error messages are Turkish. The name
+**Finance Tracker** and approved USD numeric convention remain unchanged: enter
+`1000.00` using a decimal point, as explained in the Turkish form guidance.
+The **Koyu tema** button is available on login and authenticated pages and supports
+keyboard activation. First use follows the browser's system color preference;
+an explicit choice is stored under `finance-tracker-theme` in browser localStorage
+and survives navigation/reload. Only the display preference is stored there.
+If storage is blocked, switching still works on the current page. Without JavaScript,
+CSS follows the system preference and the manual switch stays hidden.
+
+After updating to this interface revision, stop the running development server
+with Ctrl+C and run `python -m finance_tracker.django_app` again in the same
+configured terminal. Refresh the browser (Ctrl+F5 if needed). No new database
+migration or user provisioning is needed for the language/theme changes.
+
+USD with scale 2 is an approved synthetic prototype convention, not an inferred
+owner preference. First creation saves that fixed currency metadata. Other
+currencies are rejected; there is no FX or multi-currency total. Names are trimmed,
+Unicode NFKC-normalized, limited to 100 characters and unique per owner ignoring
+case; control/invisible characters are rejected. Different users may use the same
+name. Balances use decimal digits with up to two fractional places, without commas
+or exponent notation. Zero is valid; negatives, nonfinite values, excess precision
+and values above `92233720368547758.07` USD are rejected without rounding.
+Storage is integer minor units; calculations and display use no financial floats.
+
+An opening establishes a starting position; it does not create a contribution or
+any movement record. Opening dates use synthetic UTC; the service accepts an
+injected aware clock for tests. There are no update, rename/archive, transaction,
+transfer, valuation, goal, profile or reporting features in this slice.
+
+Refreshing the saved page creates nothing. Repeating the same creation submission
+returns the existing account; reusing its key with changed details fails. Account,
+opening and guard commit together. A busy SQLite error keeps the form available
+for retry. A new form uses a new key; a repeated account name still fails validation.
+All reads and creates use the signed-in owner. Privileged staff/superuser identities
+are denied the prototype financial pages; this is not the later release role policy.
+
+To demonstrate persistence, stop the server and start the same command again from
+the same worktree with the same database path. Keep the signing key to retain your
+session. Do not rerun provisioning or replace/delete the database. Saved accounts
+and exact totals remain. Migrations are explicit and additive; the existing custom
+identity model/migration is unchanged.
+
 The database is disposable prototype storage, never a production migration source.
 The custom user model is established before the first migration so subsequent
 tasks can extend it. Django admin is not exposed and superuser provisioning is
@@ -92,14 +142,17 @@ python -m pip check
 python -m django makemigrations --check --dry-run
 ```
 
-For focused authentication and prototype regression coverage, run
+For focused account coverage run `python -m pytest -q tests/django/test_accounts.py`.
+For authentication and prototype regression coverage, run
 `python -m pytest -q tests/django` before the complete suite.
 The combined suite runs the unchanged TASK-001 tests and isolated Django tests.
-Both actual-listener checks require Linux local socket permission. Django tests
+The actual startup/restart checks require Linux local socket permission. Django tests
 use private temporary databases and child interpreters so their settings cannot
 leak into Streamlit tests. TASK-025A covers sign-in/logout and authenticated
-navigation; full account creation and the complete owner demonstration remain
-TASK-004A1/M-009 obligations. See the [TASK-025A review report](testing/TASK-025A_REVIEW.md)
+navigation; TASK-004A1 adds creation, exactness, ownership, duplicate/rollback and
+process/server-restart scenarios. The complete owner demonstration and acceptance
+remain pending. See the [TASK-004A1 review report](testing/TASK-004A1_REVIEW.md),
+the [TASK-025A review report](testing/TASK-025A_REVIEW.md)
 and the historical [TASK-022A review report](testing/TASK-022A_REVIEW.md).
 
 ## Existing TASK-001 instructions

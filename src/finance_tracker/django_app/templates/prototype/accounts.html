@@ -1,18 +1,33 @@
 {% extends 'prototype/base.html' %}
-{% block title %}Accounts{% endblock %}
+{% block title %}Hesaplar{% endblock %}
 {% block content %}
-<p class="eyebrow">Your financial locations</p>
-<h1>Accounts</h1>
-<p class="intro">See account names, currencies and balances at a glance.</p>
-<section class="empty-state" aria-labelledby="empty-heading">
-  <h2 id="empty-heading">No saved accounts yet</h2>
-  <p>Account creation arrives in the next prototype task. For now, explore the illustrative card below.</p>
-</section>
-<section aria-labelledby="sample-heading">
-  <h2 id="sample-heading">Card preview</h2>
+<p class="eyebrow">Birikim hesaplarınız</p>
+<h1>Hesaplar</h1>
+<p class="intro">Hesap adlarını, para birimlerini ve bakiyelerini bir arada görün.</p>
+<p><a class="button" href="{% url 'create_account' %}">Birikim hesabı oluştur</a></p>
+{% if saved %}<div class="success-state" role="status">Deneme hesabınız kaydedildi. Açılış bakiyesini aşağıda ve Genel Bakış sayfasında görebilirsiniz.</div>{% endif %}
+{% if accounts %}
+<section aria-labelledby="saved-heading">
+  <h2 id="saved-heading">Kaydedilen deneme hesapları</h2>
   <div class="card-grid">
-    {% include 'prototype/account_card.html' with name='Example Savings' currency='USD' balance='1,000.00' only %}
+    {% for account in accounts %}{% include 'prototype/account_card.html' with name=account.name currency=account.currency balance=account.balance effective_date=account.effective_date saved=True only %}{% endfor %}
   </div>
-  <p class="muted">USD is an example currency, not a reporting-currency preference. This sample is not included in any total.</p>
+  {% if total_complete %}<p class="recorded-total">Toplam kayıtlı bakiye: <strong>{{ currency }} {{ total_balance }}</strong></p>{% else %}<p role="status">Kayıtlı bakiye eksik. Bir hesabın açılış bilgileri eksik veya desteklenmiyor.</p>{% endif %}
 </section>
+{% else %}
+<section class="empty-state" aria-labelledby="empty-heading">
+  <h2 id="empty-heading">Henüz kaydedilmiş hesap yok</h2>
+  <p>İlk deneme hesabınızı oluşturun. Kayıtlı bakiyeniz burada ve Genel Bakış sayfasında görünecek.</p>
+</section>
+{% endif %}
+<details class="sample-preview">
+  <summary>Örnek hesap kartını göster (kaydedilmez)</summary>
+<section aria-labelledby="sample-heading">
+  <h2 id="sample-heading">Kart ön izlemesi</h2>
+  <div class="card-grid">
+    {% include 'prototype/account_card.html' with name='Örnek Birikim' currency='USD' balance='1,000.00' only %}
+  </div>
+  <p class="muted">Bu karttaki USD yalnızca örnektir; para birimi tercihinizi belirlemez. Bu örnek hiçbir toplama dahil edilmez.</p>
+</section>
+</details>
 {% endblock %}

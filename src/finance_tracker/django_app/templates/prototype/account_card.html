@@ -1,6 +1,6 @@
-<article class="account-card" aria-label="Sample account">
-  <p class="eyebrow">Synthetic sample · Not saved</p>
+<article class="account-card" aria-label="{% if saved %}Kaydedilen deneme hesabı{% else %}Örnek hesap{% endif %}">
+  <p class="eyebrow">{% if saved %}Kaydedildi · Deneme hesabı{% else %}Örnek kart · Kaydedilmez{% endif %}</p>
   <h3>{{ name }}</h3>
-  <p class="balance"><span class="currency">{{ currency }}</span> {{ balance }}</p>
-  <p class="muted">Illustrative opening balance</p>
+  {% if balance != None %}<p class="balance"><span class="currency">{{ currency }}</span> {{ balance }}</p>{% else %}<p class="muted">Açılış bakiyesi mevcut değil</p>{% endif %}
+  <p class="muted">{% if saved %}Açılış bakiyesi · {{ effective_date|date:'Y-m-d' }} (deneme için UTC){% else %}Örnek açılış bakiyesi{% endif %}</p>
 </article>

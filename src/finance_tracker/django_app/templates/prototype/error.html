@@ -1,0 +1,9 @@
+{% extends 'prototype/base.html' %}
+{% block title %}{% block error_title %}İşlem tamamlanamadı{% endblock %}{% endblock %}
+{% block content %}
+<section class="empty-state" aria-labelledby="error-heading">
+  <h1 id="error-heading">{% block error_heading %}İşlem tamamlanamadı{% endblock %}</h1>
+  <p>{% block error_message %}Lütfen daha sonra tekrar deneyin.{% endblock %}</p>
+  <a href="{% url 'login' %}">Giriş sayfasına git</a>
+</section>
+{% endblock %}

@@ -10,7 +10,11 @@ The first planned Django prototype is a local synthetic-data application with cl
 
 **Implemented and accepted:** TASK-022A's separate Django shell and custom user-model foundation are integrated into local main at `18c1066`.
 
-**TASK-025A, prepared for human review:** the isolated task worktree adds synthetic user provisioning, standard Django login/logout, sessions, CSRF and protected Dashboard/Accounts pages. Account creation and financial tracking remain later tasks. Follow [local setup](docs/SETUP.md) for either runtime and the [TASK-025A review report](docs/testing/TASK-025A_REVIEW.md) for evidence and limitations. Use synthetic data only, on loopback.
+**Implemented and accepted:** TASK-025A's synthetic user provisioning, standard Django login/logout, sessions, CSRF and protected pages are integrated into local main at `d27f06b`. Its earlier review report records the pre-acceptance snapshot.
+
+**TASK-004A1, prepared for human review:** the isolated task worktree adds owned savings accounts, exact synthetic USD opening balances, saved cards and Dashboard totals in disposable SQLite. Openings are starting positions, not savings contributions. Follow [local setup](docs/SETUP.md) and the [TASK-004A1 review report](docs/testing/TASK-004A1_REVIEW.md) for verification and limitations. Use synthetic data only, on loopback. This implementation is not yet accepted or integrated.
+
+The owner-requested interface revision uses Turkish pages, forms and errors, with an accessible **Koyu tema** switch on every page. Theme choice is stored in the browser; first use follows the system preference. The Turkish interface-language rule is recorded in [AGENTS.md](AGENTS.md).
 
 **Target:** Django/PostgreSQL on Raspberry Pi 5 (8 GB), CasaOS, Docker Compose and Cloudflare Tunnel/HTTPS. Compatibility, infrastructure, CI and deployment remain later tasks. Invite-only accounts, User isolation, Admin MFA and recovery are mandatory before real users or sensitive data. Admin has no application access to private finances.
 

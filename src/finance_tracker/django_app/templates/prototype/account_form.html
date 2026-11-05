@@ -1,0 +1,24 @@
+{% extends 'prototype/base.html' %}
+{% block title %}Birikim hesabı oluştur{% endblock %}
+{% block content %}
+<p class="eyebrow">Birikim hesaplarınız</p>
+<h1>Birikim hesabı oluştur</h1>
+<p class="intro">Bir hesap adı ve deneme amaçlı açılış bakiyesi girin. Bu hesap yalnızca giriş yaptığınız kullanıcıya ait olacak.</p>
+<section class="creation-panel" aria-label="Hesap bilgileri">
+  <form method="post" action="{% url 'create_account' %}" class="account-form">
+    {% csrf_token %}
+    {% if form.errors %}<div class="form-errors" role="alert"><p>Lütfen aşağıdaki hataları düzeltin. Girdiğiniz bilgiler korundu.</p>{{ form.non_field_errors }}{% for hidden in form.hidden_fields %}{{ hidden.errors }}{% endfor %}</div>{% endif %}
+    {% for field in form.visible_fields %}
+    <div class="form-field">
+      {{ field.label_tag }}
+      {{ field }}
+      {% if field.help_text %}<p class="field-help" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</p>{% endif %}
+      {% if field.errors %}<div role="alert">{{ field.errors }}</div>{% endif %}
+    </div>
+    {% endfor %}
+    {{ form.submission_key }}
+    <div class="form-actions"><button class="button" type="submit">Hesabı kaydet</button><a href="{% url 'accounts' %}">Vazgeç</a></div>
+  </form>
+</section>
+<p class="muted">Yerel deneme prototipi · Yalnızca USD · Açılış tarihleri için UTC kullanılır. Açılış bakiyesi başlangıç tutarıdır; yeni birikim hareketi oluşturmaz.</p>
+{% endblock %}

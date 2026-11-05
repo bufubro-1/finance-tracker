@@ -19,10 +19,10 @@ for path in ("/", "/accounts/"):
     response = client.get(path)
     assert response.status_code == 302
     assert response.url == "/login/?next=" + path
-    assert b"Example Savings" not in response.content
+    assert "Örnek Birikim".encode() not in response.content
 response = client.get("/login/")
 assert response.status_code == 200
-assert b"Synthetic data only" in response.content
+assert "Yalnızca örnek veriler".encode() in response.content
 assert b"csrfmiddlewaretoken" in response.content
 ''')
     assert not Path(prototype_env["FINANCE_TRACKER_PROTOTYPE_DATABASE_PATH"]).exists()
@@ -49,12 +49,15 @@ for path, active, other in [("/", "/", "/accounts/"), ("/accounts/", "/accounts/
     assert f'href="{active}" aria-current="page"' in html
     assert f'href="{other}"' in html
     assert html.count('aria-current="page"') == 1
-    assert "Synthetic data only" in html
+    assert "Yalnızca örnek veriler" in html
     assert "name=\"viewport\"" in html
     assert "/static/prototype/style.css" in html
-assert "Example Savings" in html and "USD" in html and "1,000.00" in html
-assert "Not saved" in html and "No saved accounts yet" in html
-assert "not included in any total" in html
+    assert '<html lang="tr">' in html
+    assert '/static/prototype/theme.js' in html
+    assert 'id="theme-toggle"' in html
+assert "Örnek Birikim" in html and "USD" in html and "1,000.00" in html
+assert "Kaydedilmez" in html and "Henüz kaydedilmiş hesap yok" in html
+assert "hiçbir toplama dahil edilmez" in html
 card = render_to_string("prototype/account_card.html", {
     "name": "<script>synthetic</script>", "currency": "USD", "balance": "0.00",
 })
@@ -62,7 +65,7 @@ assert "<script>" not in card and "&lt;script&gt;" in card
 assert client.post("/").status_code == 405
 assert client.post("/accounts/").status_code == 405
 assert client.get("/admin/").status_code == 404
-assert client.get("/accounts/create/").status_code == 404
+assert client.get("/accounts/create/").status_code == 200
 assert client.get("/", HTTP_HOST="example.invalid").status_code == 400
 ''')
     assert not Path(prototype_env["FINANCE_TRACKER_DATABASE_PATH"]).exists()

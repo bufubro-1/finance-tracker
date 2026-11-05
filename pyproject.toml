@@ -16,7 +16,7 @@ dev = ["pytest==9.2.0"]
 where = ["src"]
 
 [tool.setuptools.package-data]
-"finance_tracker.django_app" = ["templates/**/*.html", "static/**/*.css"]
+"finance_tracker.django_app" = ["templates/**/*.html", "static/**/*.css", "static/**/*.js"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
