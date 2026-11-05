@@ -5,7 +5,31 @@ from pathlib import Path
 import pytest
 
 
-def test_navigation_and_sample_cards_without_database_or_network(run_django, prototype_env):
+def test_anonymous_redirect_and_login_without_database_or_network(run_django, prototype_env):
+    run_django('''
+import socket
+def reject(*args, **kwargs):
+    raise AssertionError("Unexpected external call")
+socket.socket.connect = reject
+import django
+django.setup()
+from django.test import Client
+client = Client(HTTP_HOST="127.0.0.1")
+for path in ("/", "/accounts/"):
+    response = client.get(path)
+    assert response.status_code == 302
+    assert response.url == "/login/?next=" + path
+    assert b"Example Savings" not in response.content
+response = client.get("/login/")
+assert response.status_code == 200
+assert b"Synthetic data only" in response.content
+assert b"csrfmiddlewaretoken" in response.content
+''')
+    assert not Path(prototype_env["FINANCE_TRACKER_PROTOTYPE_DATABASE_PATH"]).exists()
+    assert not Path(prototype_env["FINANCE_TRACKER_DATABASE_PATH"]).exists()
+
+
+def test_authenticated_navigation_and_sample_cards_without_network(run_django, prototype_env, migrated_prototype):
     run_django(r'''
 import socket
 def reject(*args, **kwargs):
@@ -14,8 +38,10 @@ socket.socket.connect = reject
 import django
 django.setup()
 from django.test import Client
+from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
 client = Client(HTTP_HOST="127.0.0.1")
+client.force_login(get_user_model().objects.create_user("cards@example.invalid"))
 for path, active, other in [("/", "/", "/accounts/"), ("/accounts/", "/accounts/", "/")]:
     response = client.get(path)
     assert response.status_code == 200
@@ -39,7 +65,6 @@ assert client.get("/admin/").status_code == 404
 assert client.get("/accounts/create/").status_code == 404
 assert client.get("/", HTTP_HOST="example.invalid").status_code == 400
 ''')
-    assert not Path(prototype_env["FINANCE_TRACKER_PROTOTYPE_DATABASE_PATH"]).exists()
     assert not Path(prototype_env["FINANCE_TRACKER_DATABASE_PATH"]).exists()
 
 

@@ -2,13 +2,15 @@
 
 **Accepted implementation:** TASK-001 Streamlit runtime shell at `5052b5b`. Its existing commands remain below. Keep it on loopback with synthetic configuration. Historical trusted-LAN instructions describe the old accepted interface, not authorization to expose it or use sensitive data under the revised release policy.
 
-**TASK-022A, prepared for human review:** the separate Django shell provides Dashboard/Accounts navigation, synthetic sample cards, a development banner and the initial custom email user model. The shell is read-only and currently has no sign-in, identity provisioning or account form. TASK-025A adds development authentication; TASK-004A1 adds owned accounts and exact cash observations. This is partial M-009 coverage, not an accepted complete prototype or production application.
+**Accepted Django foundation:** TASK-022A is integrated at `18c1066`. It supplies Dashboard/Accounts navigation, synthetic sample cards, a development banner and the custom email user model.
+
+**TASK-025A, prepared for human review:** dedicated synthetic provisioning and standard Django login/logout now protect Dashboard and Accounts. Account creation and exact cash observations remain TASK-004A1. This is partial M-009 coverage, not an accepted complete prototype or production application.
 
 **Intended later release environment:** Raspberry Pi 5 (8 GB), CasaOS, Docker Compose, PostgreSQL and Cloudflare Tunnel with HTTPS. TASK-024 verifies ARM64/runtime/OS/image/Compose compatibility; TASK-020 separately implements/rehearses authorized deployment and recovery. No Dockerfile, Compose configuration, release PostgreSQL database, CI workflow, tunnel or CasaOS setup is created by this task. Existing x86_64/Python 3.14.8 evidence does not establish that environment's compatibility.
 
 All intermediate work uses synthetic data. Full authentication, ownership authorization, Admin MFA, privacy, recovery and release verification precede real users or sensitive data. See [approved schedule](planning/PROJECT_SCHEDULE.md) and [Decision Log](DECISION_LOG.md). Python 3.14.x development selection remains approved; version/image choices for the intended host remain a recorded gate.
 
-## TASK-022A Django shell (Bash)
+## TASK-025A local Django prototype (Bash)
 
 From the task worktree, create and install the Python 3.14 environment with the
 same venv/pip setup commands in the existing instructions below. The updated
@@ -27,10 +29,29 @@ export FINANCE_TRACKER_DJANGO_SECRET_KEY="$(python -c 'import secrets; print(sec
 export DJANGO_SETTINGS_MODULE=finance_tracker.django_app.settings
 python -m django check
 python -m django migrate --noinput
+python -m django provision_prototype_user
 python -m finance_tracker.django_app
 ```
 
-Open `http://127.0.0.1:8000`; stop with Ctrl+C. Optional `--port 8001`
+Run these commands from the TASK-025A worktree, not the TASK-001 checkout.
+The database is `data/prototype.sqlite3` relative to that worktree; it is
+gitignored, disposable and strictly synthetic. Never use the TASK-001 database.
+
+Provisioning creates only `sample@example.invalid`, an ordinary active synthetic
+user. Enter a new development-only password twice at the hidden terminal prompts.
+No password is supplied in commands, printed or stored in plaintext. The command
+requires the exact prototype settings module and SQLite; it does not depend on
+`DEBUG=True`. It requires explicit migrations first and never changes an existing
+identity or password. A repeated invocation reports that the identity exists;
+skip provisioning on later starts. There is no default password or recovery flow.
+If secure hidden input is unavailable, provisioning stops without creating a user.
+
+Open `http://127.0.0.1:8000`; sign in with that synthetic email and the password
+you chose. Anonymous Dashboard/Accounts visits lead to login. The sign-in form
+retains the email after an error, uses a generic authentication failure and never
+redisplays the password. Use **Sign out** to submit the CSRF-protected logout form;
+visiting `/logout/` with GET does not log you out. Stop the server with Ctrl+C.
+Optional `--port 8001`
 changes only the port. The launcher fixes the address to `127.0.0.1`, selects
 prototype settings even if `DJANGO_SETTINGS_MODULE` was inherited, disables
 autoreload and serves packaged CSS using Django's development static handler.
@@ -45,7 +66,16 @@ legacy database path is rejected if it resolves to the same file path. No legacy
 configuration is changed. Path validation creates nothing; explicit `migrate`
 creates only the synthetic identity/session schema. Startup does not run migrations
 or provision identities. Keep the signing key local and out of Git; regenerating
-it invalidates future signed sessions. Do not enter real identities or records.
+it invalidates existing authentication sessions. Keep the same key when checking
+session persistence across server restarts. Do not enter real identities or records.
+
+Login returns to the requested safe same-host destination, or Dashboard by
+default. Logout always returns to login. Sessions use Django's database backend
+and default expiry; logout invalidates the current session on the server. Cookies
+are HttpOnly for sessions and SameSite=Lax for sessions/CSRF. Secure-only cookies
+are not enabled for this loopback HTTP prototype; HTTPS/proxy/cookie policy,
+throttling, membership, recovery, Admin MFA and full authorization/privacy remain
+release work. The development login is not production security acceptance.
 
 The Accounts card is a fixed **Example Savings / USD / 1,000.00** illustration,
 not an ORM account or a computed total. No financial models or data exist yet.
@@ -62,11 +92,15 @@ python -m pip check
 python -m django makemigrations --check --dry-run
 ```
 
+For focused authentication and prototype regression coverage, run
+`python -m pytest -q tests/django` before the complete suite.
 The combined suite runs the unchanged TASK-001 tests and isolated Django tests.
 Both actual-listener checks require Linux local socket permission. Django tests
 use private temporary databases and child interpreters so their settings cannot
-leak into Streamlit tests. Full sign-in/create/logout and owner demonstration
-remain TASK-025A/004A1 obligations. See the [TASK-022A review report](testing/TASK-022A_REVIEW.md).
+leak into Streamlit tests. TASK-025A covers sign-in/logout and authenticated
+navigation; full account creation and the complete owner demonstration remain
+TASK-004A1/M-009 obligations. See the [TASK-025A review report](testing/TASK-025A_REVIEW.md)
+and the historical [TASK-022A review report](testing/TASK-022A_REVIEW.md).
 
 ## Existing TASK-001 instructions
 

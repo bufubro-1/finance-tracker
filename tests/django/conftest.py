@@ -34,3 +34,15 @@ def run_django(prototype_env, tmp_path):
             assert result.returncode == 0, result.stdout + result.stderr
         return result
     return run
+
+
+@pytest.fixture
+def migrated_prototype(run_django):
+    run_django('''
+import os
+os.umask(0o077)
+import django
+django.setup()
+from django.core.management import call_command
+call_command("migrate", interactive=False, verbosity=0)
+''')

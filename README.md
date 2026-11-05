@@ -8,7 +8,9 @@ The first planned Django prototype is a local synthetic-data application with cl
 
 **Implemented and accepted:** TASK-001 supplies a minimal Streamlit runtime/configuration shell and focused tests. Its launcher remains unchanged.
 
-**TASK-022A, prepared for review:** a separate local Django shell provides Dashboard/Accounts navigation, labeled sample cards and the initial custom user-model migration. Sign-in, account creation and financial tracking remain later tasks. Follow [local setup](docs/SETUP.md) for either runtime. Use synthetic data only, on loopback.
+**Implemented and accepted:** TASK-022A's separate Django shell and custom user-model foundation are integrated into local main at `18c1066`.
+
+**TASK-025A, prepared for human review:** the isolated task worktree adds synthetic user provisioning, standard Django login/logout, sessions, CSRF and protected Dashboard/Accounts pages. Account creation and financial tracking remain later tasks. Follow [local setup](docs/SETUP.md) for either runtime and the [TASK-025A review report](docs/testing/TASK-025A_REVIEW.md) for evidence and limitations. Use synthetic data only, on loopback.
 
 **Target:** Django/PostgreSQL on Raspberry Pi 5 (8 GB), CasaOS, Docker Compose and Cloudflare Tunnel/HTTPS. Compatibility, infrastructure, CI and deployment remain later tasks. Invite-only accounts, User isolation, Admin MFA and recovery are mandatory before real users or sensitive data. Admin has no application access to private finances.
 
