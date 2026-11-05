@@ -1,0 +1,46 @@
+# Local agent and cloud configuration
+.agents/
+.codex/
+.aws/
+
+# Secrets and local application configuration
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+*.pem
+*.key
+
+# Personal financial records, exports and backups
+data/
+exports/
+backups/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+
+# Python environments and generated files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Logs and local editor / OS files
+*.log
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*~
