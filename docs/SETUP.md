@@ -12,6 +12,81 @@
 
 All intermediate work uses synthetic data. Full authentication, ownership authorization, Admin MFA, privacy, recovery and release verification precede real users or sensitive data. See [approved schedule](planning/PROJECT_SCHEDULE.md) and [Decision Log](DECISION_LOG.md). Python 3.14.x development selection remains approved; version/image choices for the intended host remain a recorded gate.
 
+## TASK-022B development and release configuration
+
+The compatible development entrypoint remains
+`finance_tracker.django_app.settings`; the guarded
+`python -m finance_tracker.django_app` launcher still forces that module and
+`127.0.0.1`. Existing prototype commands, Turkish pages, authentication and
+synthetic USD accounts remain available. Development uses only the separate
+private SQLite path; it never selects release storage from inherited variables.
+The original TASK-001 Streamlit entrypoint/configuration is unchanged.
+
+Shared framework settings live in `settings_common.py`. Release configuration
+is explicitly selected with
+`DJANGO_SETTINGS_MODULE=finance_tracker.django_app.settings_release` for later
+authorized server/management use. The development launcher intentionally ignores
+that inherited selection. Synthetic provisioning rejects the release settings
+module. Importing settings never runs migrations, creates directories, opens a
+database or enables SMTP/Gemini/Telegram.
+
+Release inputs use the separate `FINANCE_TRACKER_RELEASE_` prefix. They do not
+fall back to prototype signing keys, SQLite paths, global reporting currency or
+TASK-001 variables. No `.env` file is loaded automatically.
+
+| Suffix after `FINANCE_TRACKER_RELEASE_` | Contract |
+|---|---|
+| `SECRET_KEY` or `SECRET_KEY_FILE` | Required independent signing key: at least 50 nonblank characters, at least five distinct characters, no `django-insecure-` prefix or line breaks. Generate privately; no sample/default key is supplied. |
+| `ALLOWED_HOSTS` | Required comma-separated exact lowercase DNS names or IP literals; IPv6 is bracketed. No schemes, ports, wildcard or suffix rules. |
+| `CSRF_TRUSTED_ORIGINS` | Required comma-separated exact HTTPS origins matching allowed hosts; optional explicit port, no path, query, fragment, credentials or wildcard. Synthetic example: `https://finance.example.invalid`. |
+| `DB_NAME`, `DB_USER` | Required ASCII identifiers: start with a letter/underscore, then letters/digits/underscores; at most 63 characters. Runtime credentials must later have reviewed limited privileges. |
+| `DB_PASSWORD` or `DB_PASSWORD_FILE` | Required nonblank password without NUL or line breaks; no default. |
+| `DB_HOST` | Required exact database hostname or IP literal, without URL/port/credentials. It must identify the later reviewed private database service; parsing cannot establish network isolation. |
+| `DB_PORT` | Decimal integer 1–65535; defaults to PostgreSQL's conventional `5432`. |
+| `STATIC_ROOT` | Required dedicated absolute directory for later collected public assets. No root directory or parent traversal. Keep it separate from secrets/private data. Validation creates nothing and does not serve files. |
+| `TRUST_PROXY_HTTPS` | Exactly `true` or `false`, default `false`. Enable only after the private origin and trusted proxy's handling of `X-Forwarded-Proto` are reviewed under TASK-020. |
+
+The development key also accepts `FINANCE_TRACKER_DJANGO_SECRET_KEY_FILE` as an
+alternative to its existing environment value. Value and `_FILE` inputs are
+mutually exclusive, even if one is blank. Secret files must be regular files,
+owned by the process user, readable by that user and inaccessible to group/other;
+0600 and read-only 0400 are supported. Symlinks and special files are rejected.
+Files are UTF-8, at most 4096 bytes; one terminal LF/CRLF is removed. Protect
+parent directories and inject environment/file inputs privately. Do not put
+secret values in tracked files, shell command arguments, reports or logs.
+
+Both modes retain `DEBUG=False`, Turkish interface messages, CSRF middleware,
+HttpOnly session cookies, SameSite=Lax and frame/content-type protections.
+Release adds secure-only session/CSRF cookies and HTTPS redirection, keeps
+forwarded-host trust disabled, and trusts forwarded HTTPS only through the
+explicit switch above. HSTS remains disabled pending the reviewed deployment
+topology; no preload/subdomain policy is selected here. Development retains its
+guarded loopback HTTP cookie behaviour and packaged static-file handler.
+
+Django/application console logging emits only fixed application/level and valid
+HTTP-status metadata. It intentionally omits messages, URLs, request bodies,
+environment values, SQL and exception tracebacks, including default Django
+request/server/error output. Configuration failures identify the input name and
+fixed remediation guidance without its value or secret-file path. This logging
+policy does not configure a future production server, container, proxy or host
+logger; those remain a deployment review obligation.
+
+The release database dictionary explicitly selects Django's PostgreSQL backend
+and the supplied name/user/password/host/port; it has no SQLite fallback.
+Configuration tests import and validate that dictionary without loading a
+driver or connecting. The current lock does not include a PostgreSQL driver;
+full release `django.setup()`, system checks and server startup are therefore
+not claimed available. Driver selection/compatibility and actual PostgreSQL
+integrity/concurrency verification remain TASK-003/024. No driver, PostgreSQL,
+production server, Docker, CI, CasaOS or Tunnel is installed/configured here.
+
+Use the existing prototype commands below for synthetic local work. TASK-022B
+verification runs isolated SQLite tests and development Django checks; selected
+release middleware settings are exercised with that test storage. Passing them
+does not admit real users/data or satisfy release identity, MFA, privacy,
+PostgreSQL, recovery, intended-host or deployment gates. See the
+[TASK-022B review report](testing/TASK-022B_REVIEW.md) for actual results.
+
 ## TASK-004A1 local Django prototype (Bash)
 
 From the task worktree, create and install the Python 3.14 environment with the
