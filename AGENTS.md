@@ -72,3 +72,30 @@ Without explicit project-owner authorization for the action, agents must not:
 An instruction to implement a task, a workflow example, or approval of an implementation plan does not itself authorize commits, pushes, or merges. Do not discard, overwrite, or automatically stash unrelated work. Report needed protected-document changes and obtain authorization before editing them. Never create PRs automatically.
 
 Never claim that a change was tested unless the stated test was actually executed. Distinguish document checks, automated application tests, manual checks, and owner acceptance; report failures and omissions plainly.
+
+### Development Workflow
+
+For every implementation task, read and follow `docs/DEVELOPMENT_WORKFLOW.md` before making changes.
+
+The workflow defines the standard task lifecycle, including requirements analysis, Git isolation, implementation, testing, review preparation, human approval, committing, and merging.
+
+Follow the existing authorization restrictions in this file and `BRANCH.md`.
+
+Do not interpret workflow instructions as permission to perform restricted Git operations.
+
+Stop at the Human Review Gate unless the project owner explicitly authorizes the next operation.
+
+
+### Task Preparation
+
+Before beginning a new implementation task, follow `docs/TASK_PREPARATION.md`.
+
+Perform a read-only readiness assessment covering requirements, dependencies, approved decisions, Git state, implementation approach, and test obligations.
+
+Report readiness as Ready, Ready with Conditions, or Blocked.
+
+Preparation does not authorize implementation or Git operations.
+
+Once the project owner approves implementation, follow `docs/DEVELOPMENT_WORKFLOW.md` and the existing governance rules.
+
+Never automatically proceed to the next backlog task.
